@@ -7,6 +7,8 @@ import { validateEmail } from "@/lib/email/validate";
 import { normalizeDomain } from "@/lib/utils";
 import { consumeQuota } from "@/lib/ratelimit";
 import { getUserProviderKeys, getUserSecret } from "@/lib/keys";
+import { DEFAULT_GEOS } from "@/lib/locale-detect";
+import type { DiscoveredLead } from "@/lib/discovery/provider";
 import { scoreLead } from "@/services/score-lead";
 import { researchProspect } from "@/services/research-prospect";
 import { generateEmail } from "@/services/generate-email";
@@ -81,15 +83,26 @@ export async function runCampaignPipeline(
           campaign.product.icps.flatMap((i) => (i.searchQueries as string[] | null) ?? []),
         ),
       ];
-  const discovered = queries.length && backlog < maxLeads
-    ? await provider.search({
+  // Spread discovery across multiple countries so the lead pool grows large and
+  // international (UK, France, etc.). Each lead remembers its country so the
+  // email can later be written in that country's language.
+  const geos: string[] = (campaign.targetGeos as string[] | null)?.length
+    ? (campaign.targetGeos as string[])
+    : DEFAULT_GEOS;
+  const discovered: DiscoveredLead[] = [];
+  if (queries.length && backlog < maxLeads) {
+    for (const geo of geos) {
+      if (discovered.length >= maxLeads * 6) break;
+      const found = await provider.search({
         queries,
         industry: campaign.icp?.industry ?? undefined,
-        geo: campaign.icp?.geo ?? undefined,
-        limit: campaign.dailyLimit * 4,
+        geo,
+        limit: 12,
         apiKey: serperKey ?? undefined,
-      })
-    : [];
+      });
+      discovered.push(...found);
+    }
+  }
 
   for (const d of discovered) {
     const domain = normalizeDomain(d.website ?? "");

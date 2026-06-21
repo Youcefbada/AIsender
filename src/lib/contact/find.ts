@@ -9,8 +9,9 @@ import { fetchHtml, absoluteUrl } from "@/lib/fetch-page";
 const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
 const CONTACT_HINTS = ["contact", "about", "team", "company", "impressum"];
 
-// Junk emails to ignore (asset/CDN/example noise).
-const IGNORE = /(\.png|\.jpg|\.jpeg|\.gif|\.svg|\.webp|@example\.|@sentry\.|wixpress|@2x)/i;
+// Junk emails to ignore (asset/CDN/example/placeholder noise).
+const IGNORE =
+  /(\.png|\.jpg|\.jpeg|\.gif|\.svg|\.webp|@2x|@sentry\.|wixpress|@example|example\.com|your@|@your|youremail|yourdomain|yourname|email@|name@|user@|test@|domain\.com|sentry|@email\.com)/i;
 
 export interface FoundContact {
   email: string;

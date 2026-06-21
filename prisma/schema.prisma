@@ -211,6 +211,9 @@ model Campaign {
   sendWindowEnd     Int     @default(17)
   timezone          String  @default("UTC")
   senderIdentityId  String?
+  // Countries to spread discovery across (e.g. ["United Kingdom","France"]).
+  // Empty/null → a sensible default set of high-value markets.
+  targetGeos        Json?
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

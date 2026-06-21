@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { chatComplete, parseJsonResponse } from "@/lib/ai/openrouter";
 import { emailPrompt } from "@/lib/ai/prompts";
+import { detectLanguage } from "@/lib/locale-detect";
 import type { Provider } from "@/lib/ai/models";
 
 // STEP 6: generate a personalized draft for a qualified, contactable lead.
@@ -48,6 +49,7 @@ export async function generateEmail(args: GenerateArgs) {
       outreachAngle: angles[(args.stepOrder ?? 0) % angles.length],
       benefit: benefits[(args.stepOrder ?? 0) % benefits.length],
       senderName: campaign.senderIdentity?.fromName ?? "The team",
+      language: detectLanguage(lead.geo, lead.domain),
       stepPurpose: args.stepPurpose,
       lead: {
         company: lead.company,

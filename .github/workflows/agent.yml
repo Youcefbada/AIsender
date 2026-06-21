@@ -1,0 +1,36 @@
+name: AIToolSender Agent
+
+# Runs the agent automatically every 15 minutes:
+#  - /api/agent/run      → discover (across countries) → research → score → draft
+#  - /api/agent/dispatch → send approved emails (respects each campaign's daily
+#                          limit + send window)
+# Free via GitHub Actions. You can also trigger it manually (Run workflow).
+#
+# The bearer below matches CRON_SECRET in src/lib/config.ts. Keep this repo
+# PRIVATE. To rotate, change it in both places (or move it to a GitHub Secret
+# and use ${{ secrets.CRON_SECRET }}).
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discover + draft
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://fakherb.store/api/agent/run || true
+        env:
+          CRON_SECRET: "1ezlN3rKEZyjHPipG0OyQj1xC35+aHOi"
+
+      - name: Dispatch (send due emails)
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://fakherb.store/api/agent/dispatch || true
+        env:
+          CRON_SECRET: "1ezlN3rKEZyjHPipG0OyQj1xC35+aHOi"

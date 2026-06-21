@@ -109,6 +109,7 @@ export function emailPrompt(input: {
   outreachAngle: string;
   benefit: string;
   senderName: string;
+  language?: string; // e.g. "French" — write the whole email in this language
   lead: {
     company: string;
     contactName?: string | null;
@@ -117,11 +118,12 @@ export function emailPrompt(input: {
   };
   stepPurpose?: string;
 }) {
+  const language = input.language || "English";
   return [
     {
       role: "system" as const,
       content:
-        "You write short, human, genuinely personalized B2B outreach emails. NO hype, NO fake urgency, NO spam phrases, NO emoji. Reference real specifics. Sound like a thoughtful person, not a template. Respond ONLY with valid JSON.",
+        `You write short, human, genuinely personalized B2B outreach emails. Write the ENTIRE email (subject + body) in ${language}, fluent and native-sounding. NO hype, NO fake urgency, NO spam phrases, NO emoji. Reference a real, specific detail about THIS company so it reads like it was written just for them — never a template. Respond ONLY with valid JSON.`,
     },
     {
       role: "user" as const,
