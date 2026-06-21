@@ -50,7 +50,7 @@ export async function runCampaignPipeline(
 
   const campaign = await prisma.campaign.findUniqueOrThrow({
     where: { id: campaignId },
-    include: { product: { include: { analysis: true } }, icp: true },
+    include: { product: { include: { analysis: true, icps: true } }, icp: true },
   });
   const analysis = campaign.product.analysis;
   if (!analysis) throw new Error("Product not analyzed yet");
@@ -72,10 +72,15 @@ export async function runCampaignPipeline(
   });
   // Prefer the user's own Serper key when set, else the system default provider.
   const provider = serperKey ? serperProvider : getProvider();
-  const queries =
-    (campaign.icp?.searchQueries as string[] | undefined)?.length
-      ? (campaign.icp!.searchQueries as string[])
-      : [];
+  // Use the campaign's ICP queries; if no ICP was selected, fall back to ALL of
+  // the product's ICP search queries so discovery still works.
+  const queries: string[] = (campaign.icp?.searchQueries as string[] | undefined)?.length
+    ? (campaign.icp!.searchQueries as string[])
+    : [
+        ...new Set(
+          campaign.product.icps.flatMap((i) => (i.searchQueries as string[] | null) ?? []),
+        ),
+      ];
   const discovered = queries.length && backlog < maxLeads
     ? await provider.search({
         queries,
