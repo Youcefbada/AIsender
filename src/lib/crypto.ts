@@ -1,12 +1,11 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { config } from "./config";
 
 // AES-256-GCM encryption for secrets at rest (user API keys, SMTP passwords).
-// ENCRYPTION_KEY must be a base64-encoded 32-byte key.
+// Key is a base64-encoded 32-byte value from config (env overrides).
 
 function key(): Buffer {
-  const raw = process.env.ENCRYPTION_KEY;
-  if (!raw) throw new Error("ENCRYPTION_KEY is not set");
-  const buf = Buffer.from(raw, "base64");
+  const buf = Buffer.from(config.encryptionKey, "base64");
   if (buf.length !== 32) {
     throw new Error("ENCRYPTION_KEY must decode to 32 bytes (base64).");
   }

@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
+import { config } from "./config";
 
 // NextAuth / Auth.js v5.
 // Primary login = username + password (Credentials). Credentials requires the
@@ -49,6 +50,9 @@ if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  secret: config.authSecret,
+  // No domain needed: trust the deploy host (works on any Hostinger URL).
+  trustHost: true,
   providers,
   pages: { signIn: "/login" },
   callbacks: {

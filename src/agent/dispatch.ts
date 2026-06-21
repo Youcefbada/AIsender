@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email/send";
 import { getUserEmailCreds } from "@/lib/keys";
+import { config } from "@/lib/config";
 import {
   complianceHeaders,
   decorateHtml,
@@ -68,9 +69,9 @@ export async function dispatchDueEmails(
         continue;
       }
 
-      const fromName = email.senderIdentity?.fromName ?? process.env.EMAIL_FROM_NAME ?? "Outreach";
-      const fromEmail = email.senderIdentity?.fromEmail ?? process.env.EMAIL_FROM!;
-      const mailingAddress = email.senderIdentity?.mailingAddress ?? process.env.EMAIL_MAILING_ADDRESS ?? "";
+      const fromName = email.senderIdentity?.fromName ?? config.emailFromName;
+      const fromEmail = email.senderIdentity?.fromEmail ?? config.emailFrom;
+      const mailingAddress = email.senderIdentity?.mailingAddress ?? config.emailMailingAddress;
 
       await prisma.emailMessage.update({ where: { id: email.id }, data: { status: "SENDING", attempts: { increment: 1 } } });
 

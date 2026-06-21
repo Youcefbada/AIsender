@@ -1,12 +1,12 @@
 import { createHmac } from "node:crypto";
+import { config } from "@/lib/config";
 
 // CAN-SPAM / GDPR compliance helpers. Every outbound email MUST include a
 // physical mailing address and a working one-click unsubscribe. Tracking is
 // opt-out-able per campaign; pixels/links are signed so they can't be forged.
 
 function sign(value: string): string {
-  const secret = process.env.TRACKING_SECRET || "dev-insecure-secret";
-  return createHmac("sha256", secret).update(value).digest("hex").slice(0, 24);
+  return createHmac("sha256", config.trackingSecret).update(value).digest("hex").slice(0, 24);
 }
 
 export function signedToken(emailId: string): string {
@@ -19,7 +19,7 @@ export function verifyToken(token: string): string | null {
   return sign(emailId) === sig ? emailId : null;
 }
 
-const appUrl = () => process.env.APP_URL || "http://localhost:3000";
+const appUrl = () => config.appUrl || "http://localhost:3000";
 
 export function trackingPixelUrl(emailId: string): string {
   return `${appUrl()}/api/track/open/${signedToken(emailId)}.png`;

@@ -10,7 +10,11 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  // Hardcoded per request so no env setup is needed on Hostinger.
+  // NOTE: the "@" in the password is URL-encoded as %40. Host is "localhost"
+  // because the Node app runs on the same Hostinger server as MySQL; switch to
+  // the Remote MySQL host from hPanel if you ever connect from elsewhere.
+  url      = "mysql://u700271251_Affiliate:Youcefbada2004%40@localhost:3306/u700271251_aiafilliete"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

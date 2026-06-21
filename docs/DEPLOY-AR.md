@@ -49,18 +49,13 @@ git push
 
 ## الجزء 2 — قاعدة بيانات MySQL على Hostinger
 
-1. من hPanel افتح **Databases → Management**.
-2. أنشئ قاعدة بيانات + مستخدم، واحفظ:
-   - اسم القاعدة (DB name)
-   - اسم المستخدم (DB user)
-   - كلمة المرور
-   - المضيف (Host) — غالبًا `localhost` داخل الاستضافة.
-3. كوّن رابط الاتصال:
-```
-mysql://DB_USER:DB_PASSWORD@DB_HOST:3306/DB_NAME
-```
-> ملاحظة: لو ستشغّل أوامر قاعدة البيانات من جهازك، فعّل **Remote MySQL** في hPanel
-> وأضف IP جهازك. الأسهل هو التشغيل عبر SSH داخل الاستضافة (الجزء 5).
+تم إنشاؤها بالفعل، وبياناتها مكتوبة في الكود:
+- اسم القاعدة: `u700271251_aiafilliete`
+- المستخدم: `u700271251_Affiliate`
+- المضيف: `localhost` (لأن التطبيق على نفس سيرفر Hostinger)
+
+> هذه القيم موجودة داخل `prisma/schema.prisma`. لو غيّرت كلمة مرور القاعدة،
+> حدّث السطر `url = "mysql://..."` هناك (وذكّر أن `@` تُكتب `%40`).
 
 ---
 
@@ -77,43 +72,23 @@ mysql://DB_USER:DB_PASSWORD@DB_HOST:3306/DB_NAME
 
 ---
 
-## الجزء 4 — متغيرات البيئة (Environment Variables)
+## الجزء 4 — الإعدادات (لا حاجة لمتغيرات بيئة!)
 
-من لوحة تطبيق الـ Node.js → قسم **Environment variables**، أضف التالي.
+كل القيم السرية وبيانات قاعدة البيانات **مكتوبة مباشرة في الكود** داخل
+`src/lib/config.ts` و `prisma/schema.prisma`، فلا تحتاج ضبط أي Environment
+Variables على Hostinger. شغّل التطبيق مباشرة.
 
-ولّد القيم السرية على جهازك:
-```bash
-openssl rand -base64 32   # لـ AUTH_SECRET
-openssl rand -base64 32   # لـ ENCRYPTION_KEY (لازم 32 بايت)
-openssl rand -base64 24   # لـ TRACKING_SECRET
-openssl rand -base64 24   # لـ CRON_SECRET
-```
+- بيانات قاعدة البيانات: داخل `prisma/schema.prisma` (مستخدم/كلمة مرور/اسم القاعدة).
+- مفاتيح التشفير والتوقيع وحساب الكرون: داخل `src/lib/config.ts`.
+- الإيميل المُرسِل الافتراضي: `affiliate@luminax.pro` (تقدر تغيّره من Settings أيضًا).
+- **الدومين:** غير مطلوب الآن. لما يكون عندك دومين، ضع رابطك في `config.appUrl`
+  (مثلًا `"https://marlinrch.shop"`) عشان روابط فتح/إلغاء الاشتراك في الإيميل تشتغل.
 
-المتغيرات المطلوبة:
-```
-DATABASE_URL=mysql://DB_USER:DB_PASSWORD@DB_HOST:3306/DB_NAME
-AUTH_SECRET=القيمة_المولّدة
-ENCRYPTION_KEY=القيمة_المولّدة
-TRACKING_SECRET=القيمة_المولّدة
-CRON_SECRET=القيمة_المولّدة
-APP_URL=https://yourdomain.com
-NEXTAUTH_URL=https://yourdomain.com
-EMAIL_FROM=you@yourdomain.com
-EMAIL_FROM_NAME=اسمك
-EMAIL_MAILING_ADDRESS=عنوانك البريدي الحقيقي
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=Admin!2026
-```
+> مفاتيح الذكاء الاصطناعي والبريد والاكتشاف (Gemini/Groq/Resend/Serper/SMTP)
+> **لا تُكتب هنا** — كل مستخدم يضيفها من داخل التطبيق في **Settings → API keys**.
 
-اختيارية (مفاتيح افتراضية للنظام — لكن كل مستخدم يقدر يضيف مفاتيحه من Settings):
-```
-GEMINI_API_KEY=...
-GROQ_API_KEY=...
-OPENROUTER_API_KEY=...
-RESEND_API_KEY=...
-SERPER_API_KEY=...
-```
-> أعد النشر/التشغيل بعد إضافة المتغيرات.
+> أمان: المستودع يحتوي أسرارًا الآن، فاجعله **Private** دائمًا، وغيّر كلمة مرور
+> قاعدة البيانات لو تسربت.
 
 ---
 

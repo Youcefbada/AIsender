@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runAllActiveCampaigns } from "@/agent/run";
+import { config } from "@/lib/config";
 
 // Cron-triggered. Protect with a bearer token (CRON_SECRET) so only your
 // scheduler can invoke it. On Hostinger use a cron job hitting this URL;
@@ -9,8 +10,7 @@ export const maxDuration = 300; // allow long pipeline runs where supported
 
 export async function POST(req: Request) {
   const auth = req.headers.get("authorization");
-  const expected = `Bearer ${process.env.CRON_SECRET}`;
-  if (!process.env.CRON_SECRET || auth !== expected) {
+  if (auth !== `Bearer ${config.cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const results = await runAllActiveCampaigns("cron");
