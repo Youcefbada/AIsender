@@ -1,20 +1,17 @@
 // AITOOLSENDER — AI-powered lead discovery & personalized outreach
-// Prisma schema. MySQL (Hostinger Business). See docs/ARCHITECTURE.md for rationale.
+// Prisma schema. PostgreSQL (Supabase). See docs/ARCHITECTURE.md for rationale.
 
 generator client {
   provider = "prisma-client-js"
-  // "native" covers local dev; add the Hostinger Linux target if a deploy-time
-  // engine mismatch ever appears (uncomment): "debian-openssl-3.0.x".
   binaryTargets = ["native"]
 }
 
 datasource db {
-  provider = "mysql"
-  // Hardcoded per request so no env setup is needed on Hostinger.
-  // NOTE: the "@" in the password is URL-encoded as %40. Host is "localhost"
-  // because the Node app runs on the same Hostinger server as MySQL; switch to
-  // the Remote MySQL host from hPanel if you ever connect from elsewhere.
-  url      = "mysql://u700271251_Affiliate:Youcefbada2004%40@localhost:3306/u700271251_aiafilliete"
+  provider = "postgresql"
+  // Hardcoded Supabase Session-pooler URL (IPv4) so no env setup is needed.
+  // Password special chars are URL-encoded: / → %2F, % → %25, & → %26,
+  // , → %2C, # → %23. Keep this repo PRIVATE.
+  url      = "postgresql://postgres.pkahtfqlcedraumcytiv:n%2F4q%25B%26pqBw%2Cf%23r@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
