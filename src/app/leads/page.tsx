@@ -4,6 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CsvImport } from "@/components/forms/csv-import";
+import { ActionButton } from "@/components/forms/action-button";
 import { getI18n } from "@/lib/i18n/server";
 
 const toneFor = (status: string) =>
@@ -41,6 +42,15 @@ export default async function LeadsPage() {
                   <div className="flex items-center gap-2">
                     <Badge tone={l.scoreTotal >= 80 ? "green" : "default"}>{t.leads.score} {l.scoreTotal}</Badge>
                     <Badge tone={toneFor(l.status)}>{l.status}</Badge>
+                    <ActionButton
+                      endpoint={`/api/leads/${l.id}`}
+                      method="DELETE"
+                      variant="ghost"
+                      size="sm"
+                      idle={t.common.remove}
+                      busy="…"
+                      confirm={t.common.deleteLeadConfirm}
+                    />
                   </div>
                 </CardContent>
               </Card>

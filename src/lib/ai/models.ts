@@ -53,7 +53,7 @@ const ROUTES: Record<AiTask, ModelRef[]> = {
   scoring: [
     { provider: "gemini", model: process.env.MODEL_SCORING || "gemini-2.0-flash-lite" },
     { provider: "groq", model: "llama-3.1-8b-instant" },
-    { provider: "openrouter", model: "qwen/qwen-2.5-72b-instruct:free" },
+    { provider: "openrouter", model: "deepseek/deepseek-chat:free" },
   ],
   email: [
     { provider: "gemini", model: process.env.MODEL_EMAIL || "gemini-2.0-flash" },
@@ -63,7 +63,7 @@ const ROUTES: Record<AiTask, ModelRef[]> = {
   research: [
     { provider: "gemini", model: process.env.MODEL_RESEARCH || "gemini-2.0-flash-lite" },
     { provider: "groq", model: "llama-3.3-70b-versatile" },
-    { provider: "openrouter", model: "qwen/qwen-2.5-72b-instruct:free" },
+    { provider: "openrouter", model: "deepseek/deepseek-chat:free" },
   ],
 };
 

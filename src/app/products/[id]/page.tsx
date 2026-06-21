@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ActionButton } from "@/components/forms/action-button";
 import { CampaignForm } from "@/components/forms/campaign-form";
+import { ProductEditForm } from "@/components/forms/product-edit-form";
 import { getI18n } from "@/lib/i18n/server";
 
 export default async function ProductDetail({
@@ -33,14 +34,37 @@ export default async function ProductDetail({
           <h1 className="text-xl font-semibold">{product.name}</h1>
           <a href={product.url} className="text-xs text-[var(--muted-foreground)]" target="_blank">{product.url}</a>
         </div>
-        <ActionButton
-          endpoint={`/api/products/${product.id}/analyze`}
-          idle={a ? t.productDetail.reanalyze : t.productDetail.analyze}
-          busy={t.productDetail.analyzing}
-        />
+        <div className="flex items-center gap-2">
+          <ActionButton
+            endpoint={`/api/products/${product.id}/analyze`}
+            idle={a ? t.productDetail.reanalyze : t.productDetail.analyze}
+            busy={t.productDetail.analyzing}
+          />
+          <ActionButton
+            endpoint={`/api/products/${product.id}`}
+            method="DELETE"
+            variant="destructive"
+            idle={t.common.delete}
+            busy="…"
+            confirm={t.common.deleteProductConfirm}
+            redirectTo="/products"
+          />
+        </div>
       </div>
 
       <p className="mt-3 text-sm text-[var(--muted-foreground)]">{product.description}</p>
+      <div className="mt-2">
+        <ProductEditForm
+          product={{
+            id: product.id,
+            name: product.name,
+            url: product.url,
+            affiliateUrl: product.affiliateUrl,
+            description: product.description,
+            notes: product.notes,
+          }}
+        />
+      </div>
 
       {!a && (
         <p className="mt-6 text-sm text-[var(--muted-foreground)]">

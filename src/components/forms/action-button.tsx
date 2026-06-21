@@ -6,15 +6,17 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 
 interface Props extends ButtonProps {
   endpoint: string;
+  method?: "POST" | "DELETE" | "PATCH";
   body?: unknown;
   idle: string;
   busy?: string;
   confirm?: string;
+  redirectTo?: string; // navigate here on success (e.g. after delete)
 }
 
-// Generic POST-then-refresh button for one-shot mutations (analyze, run,
-// approve, cancel). Keeps server components free of client logic.
-export function ActionButton({ endpoint, body, idle, busy = "Working…", confirm, ...rest }: Props) {
+// Generic mutate-then-refresh button for one-shot actions (analyze, run,
+// approve, cancel, delete). Keeps server components free of client logic.
+export function ActionButton({ endpoint, method = "POST", body, idle, busy = "Working…", confirm, redirectTo, ...rest }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -23,10 +25,14 @@ export function ActionButton({ endpoint, body, idle, busy = "Working…", confir
     setLoading(true);
     try {
       const res = await fetch(endpoint, {
-        method: "POST",
+        method,
         headers: { "Content-Type": "application/json" },
         body: body ? JSON.stringify(body) : undefined,
       });
+      if (res.ok && redirectTo) {
+        router.push(redirectTo);
+        return;
+      }
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         alert(j.error ?? "Request failed");

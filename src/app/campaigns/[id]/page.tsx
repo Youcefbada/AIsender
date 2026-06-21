@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ActionButton } from "@/components/forms/action-button";
 import { CsvImport } from "@/components/forms/csv-import";
+import { CampaignEditForm } from "@/components/forms/campaign-edit-form";
 import { getI18n } from "@/lib/i18n/server";
 
 export default async function CampaignDetail({
@@ -45,8 +46,29 @@ export default async function CampaignDetail({
             {campaign.autoSend ? t.campaigns.autoSend : t.campaigns.approval}
           </div>
         </div>
-        <ActionButton endpoint={`/api/campaigns/${id}/run`} idle={t.campaigns.runNow} busy={t.campaigns.running} />
+        <div className="flex flex-wrap items-center gap-2">
+          <ActionButton endpoint={`/api/campaigns/${id}/run`} idle={t.campaigns.runNow} busy={t.campaigns.running} />
+          <ActionButton
+            endpoint={`/api/campaigns/${id}`}
+            method="PATCH"
+            variant="outline"
+            body={{ status: campaign.status === "ACTIVE" ? "PAUSED" : "ACTIVE" }}
+            idle={campaign.status === "ACTIVE" ? t.common.pause : t.common.resume}
+            busy="…"
+          />
+          <ActionButton
+            endpoint={`/api/campaigns/${id}`}
+            method="DELETE"
+            variant="destructive"
+            idle={t.common.delete}
+            busy="…"
+            confirm={t.common.deleteCampaignConfirm}
+            redirectTo="/campaigns"
+          />
+        </div>
       </div>
+
+      <div className="mt-2"><CampaignEditForm campaign={{ id: campaign.id, name: campaign.name, dailyLimit: campaign.dailyLimit, minScore: campaign.minScore, autoSend: campaign.autoSend }} /></div>
 
       {lastRun && (
         <p className="mt-2 text-xs text-[var(--muted-foreground)]">

@@ -45,7 +45,14 @@ Return JSON with this exact shape:
     }
   ]
 }
-Produce 2-4 sharply-defined ICPs. Avoid generic audiences. searchQueries must be specific enough to find real businesses.`,
+Produce 2-4 sharply-defined ICPs. Avoid generic audiences.
+
+searchQueries RULES (critical): each must find BUSINESS WEBSITES (agencies,
+companies, studios, shops, firms) that publish a public contact email — NOT
+social profiles or job boards. Do NOT use site: operators (no site:linkedin.com,
+site:instagram.com, site:facebook.com, site:youtube.com, site:behance.net).
+Write plain Google queries, e.g. "product photography studios contact",
+"ecommerce marketing agencies email", "<niche> companies in <geo>".`,
     },
   ];
 }

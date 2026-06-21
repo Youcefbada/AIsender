@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SenderIdentityForm } from "@/components/forms/sender-identity-form";
 import { ApiKeysForm } from "@/components/forms/api-keys-form";
+import { ActionButton } from "@/components/forms/action-button";
 import { getI18n } from "@/lib/i18n/server";
 
 export default async function SettingsPage() {
@@ -37,7 +38,18 @@ export default async function SettingsPage() {
                   <div className="font-medium">{s.fromName}</div>
                   <div className="text-xs text-[var(--muted-foreground)]">{s.fromEmail} · {s.channel}</div>
                 </div>
-                <Badge tone={s.verified ? "green" : "amber"}>{s.verified ? t.settings.verified : t.settings.unverified}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge tone={s.verified ? "green" : "amber"}>{s.verified ? t.settings.verified : t.settings.unverified}</Badge>
+                  <ActionButton
+                    endpoint={`/api/sender-identities/${s.id}`}
+                    method="DELETE"
+                    variant="ghost"
+                    size="sm"
+                    idle={t.common.remove}
+                    busy="…"
+                    confirm={t.common.deleteSenderConfirm}
+                  />
+                </div>
               </div>
             ))}
           </CardContent>
