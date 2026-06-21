@@ -1,0 +1,567 @@
+// AITOOLSENDER — AI-powered lead discovery & personalized outreach
+// Prisma schema. MySQL (Hostinger Business). See docs/ARCHITECTURE.md for rationale.
+
+generator client {
+  provider = "prisma-client-js"
+  // "native" covers local dev; add the Hostinger Linux target if a deploy-time
+  // engine mismatch ever appears (uncomment): "debian-openssl-3.0.x".
+  binaryTargets = ["native"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH (NextAuth / Auth.js v5 — Prisma adapter compatible)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  // Username + password login (Credentials). email is optional so users can
+  // register with just a username; OAuth users still get an email.
+  username      String?   @unique
+  passwordHash  String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  products     Product[]
+  campaigns    Campaign[]
+  leads        Lead[]
+  emails       EmailMessage[]
+  senderIdentities SenderIdentity[]
+  apiKeys      ApiKey[]
+  auditLogs    AuditLog[]
+  usage        UsageCounter[]
+
+  @@index([email])
+  @@index([username])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Encrypted per-user secrets (OpenRouter key, Resend key, SMTP creds).
+// Values are encrypted at rest in app layer (AES-256-GCM) — never store plaintext.
+model ApiKey {
+  id        String      @id @default(cuid())
+  userId    String
+  provider  KeyProvider
+  label     String?
+  ciphertext String     @db.Text // encrypted secret
+  iv        String                // base64 GCM iv
+  authTag   String                // base64 GCM auth tag
+  createdAt DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider, label])
+}
+
+enum KeyProvider {
+  GEMINI
+  GROQ
+  OPENROUTER
+  RESEND
+  SERPER
+  SMTP
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PRODUCT + AI ANALYSIS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Product {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  url          String
+  affiliateUrl String?
+  description  String   @db.Text
+  notes        String?  @db.Text
+  status       ProductStatus @default(DRAFT)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysis  ProductAnalysis?
+  icps      Icp[]
+  campaigns Campaign[]
+
+  @@index([userId])
+}
+
+enum ProductStatus {
+  DRAFT
+  ANALYZING
+  READY
+  ARCHIVED
+}
+
+// One AI-generated analysis per product (STEP 1). Re-runnable; we keep the latest.
+model ProductAnalysis {
+  id            String   @id @default(cuid())
+  productId     String   @unique
+  summary       String   @db.Text   // what the product does
+  benefits      Json                 // string[]
+  targetAudience Json                // string[]
+  industries    Json                 // string[]
+  pricingTier   String?              // free|low|mid|enterprise
+  audienceType  AudienceType
+  buyingIntent  String?              // low|medium|high
+  painPoints    Json                 // string[]
+  outreachAngles Json                // string[]
+  model         String               // which OpenRouter model produced this
+  rawResponse   Json?                // full model output for debugging
+  createdAt     DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+enum AudienceType {
+  B2B
+  B2C
+  BOTH
+}
+
+// Ideal Customer Profiles derived from analysis. Drive lead discovery queries.
+model Icp {
+  id          String  @id @default(cuid())
+  productId   String
+  name        String              // e.g. "Boutique SEO agencies"
+  persona     String  @db.Text    // buyer persona narrative
+  industry    String?
+  companySize String?             // "1-10", "11-50", ...
+  geo         String?             // optional geo focus
+  keywords    Json                // string[] search keywords
+  searchQueries Json              // string[] concrete discovery queries
+  priority    Int     @default(0)
+  createdAt   DateTime @default(now())
+
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  campaigns Campaign[]
+  leads     Lead[]
+
+  @@index([productId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CAMPAIGN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Campaign {
+  id          String   @id @default(cuid())
+  userId      String
+  productId   String
+  icpId       String?
+  name        String
+  status      CampaignStatus @default(ACTIVE)
+
+  // Sending controls / guardrails
+  dailyLimit        Int     @default(20)   // configurable 1-50
+  minScore          Int     @default(80)   // contact threshold
+  autoSend          Boolean @default(false) // false = human approval gate (recommended)
+  sendWindowStart   Int     @default(9)     // local hour
+  sendWindowEnd     Int     @default(17)
+  timezone          String  @default("UTC")
+  senderIdentityId  String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product         Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  icp             Icp?            @relation(fields: [icpId], references: [id])
+  senderIdentity  SenderIdentity? @relation(fields: [senderIdentityId], references: [id])
+  leads           Lead[]
+  emails          EmailMessage[]
+  sequenceSteps   SequenceStep[]
+  metrics         CampaignMetric[]
+
+  @@index([userId])
+  @@index([productId])
+}
+
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+// Multi-step follow-up sequence definition (STEP 6 / 7).
+model SequenceStep {
+  id         String @id @default(cuid())
+  campaignId String
+  stepOrder  Int                 // 0 = initial, 1+ = follow-ups
+  delayDays  Int    @default(3)  // days after previous step
+  purpose    String?             // "value-add", "case-study", "breakup"
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, stepOrder])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LEAD + SCORING + CONTACT + RESEARCH
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Lead {
+  id         String   @id @default(cuid())
+  userId     String
+  campaignId String?
+  icpId      String?
+
+  company     String
+  website     String?
+  domain      String?            // normalized, used for dedup
+  industry    String?
+  companySize String?
+  geo         String?
+  source      String             // where we found it (directory, search, etc.)
+  sourceUrl   String?
+
+  status      LeadStatus @default(DISCOVERED)
+  scoreTotal  Int        @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign  Campaign?      @relation(fields: [campaignId], references: [id])
+  icp       Icp?           @relation(fields: [icpId], references: [id])
+  contacts  Contact[]
+  score     LeadScore?
+  research  ProspectResearch?
+  emails    EmailMessage[]
+
+  // dedup: a user shouldn't hold the same domain twice
+  @@unique([userId, domain])
+  @@index([userId])
+  @@index([campaignId])
+  @@index([status])
+}
+
+enum LeadStatus {
+  DISCOVERED
+  SCORED
+  QUALIFIED      // score >= threshold
+  DISQUALIFIED
+  CONTACT_FOUND
+  RESEARCHED
+  DRAFTED
+  QUEUED
+  CONTACTED
+  REPLIED
+  BOUNCED
+  UNSUBSCRIBED
+  CONVERTED
+}
+
+// Public contact info (STEP 4). Validated before send.
+model Contact {
+  id           String  @id @default(cuid())
+  leadId       String
+  name         String?
+  position     String?
+  email        String?
+  emailStatus  EmailValidationStatus @default(UNKNOWN)
+  source       String                 // contact page, directory, etc.
+  isPrimary    Boolean @default(false)
+  createdAt    DateTime @default(now())
+
+  lead   Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  emails EmailMessage[]
+
+  @@index([leadId])
+  @@index([email])
+}
+
+enum EmailValidationStatus {
+  UNKNOWN
+  VALID         // syntax + MX ok
+  RISKY         // catch-all / role-based
+  INVALID
+  SUPPRESSED    // on suppression list
+}
+
+// Scoring breakdown (STEP 3). One per lead, recomputable.
+model LeadScore {
+  id            String @id @default(cuid())
+  leadId        String @unique
+  industryMatch    Int @default(0) // +30
+  companySizeMatch Int @default(0) // +20
+  websiteQuality   Int @default(0) // +10
+  socialActivity   Int @default(0) // +15
+  technologyMatch  Int @default(0) // +15
+  painPointMatch   Int @default(0) // +25
+  total            Int @default(0) // 0-100
+  reasoning     String? @db.Text     // AI explanation of the score
+  model         String?
+  createdAt     DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+// Deep research used to personalize email (STEP 5).
+model ProspectResearch {
+  id            String @id @default(cuid())
+  leadId        String @unique
+  services      Json?               // string[]
+  aboutSummary  String? @db.Text
+  recentActivity Json?              // string[]
+  socialLinks   Json?               // {platform: url}
+  techStack     Json?               // string[]
+  personalizationHooks Json?        // string[] — concrete details to reference
+  model         String?
+  createdAt     DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EMAIL / OUTREACH / DELIVERABILITY
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SenderIdentity {
+  id         String  @id @default(cuid())
+  userId     String
+  fromName   String
+  fromEmail  String
+  replyTo    String?
+  channel    SendChannel @default(RESEND)
+  // Physical mailing address + identity — required for CAN-SPAM compliance.
+  mailingAddress String?
+  // Warmup tracking
+  warmupStage Int    @default(0)  // 0=cold ... escalate daily cap as it warms
+  verified    Boolean @default(false)
+  createdAt   DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaigns Campaign[]
+  emails    EmailMessage[]
+
+  @@index([userId])
+}
+
+enum SendChannel {
+  RESEND
+  SMTP
+}
+
+model EmailMessage {
+  id            String @id @default(cuid())
+  userId        String
+  campaignId    String
+  leadId        String
+  contactId     String?
+  senderIdentityId String?
+  stepOrder     Int    @default(0)
+
+  subject       String
+  bodyHtml      String @db.Text
+  bodyText      String @db.Text
+  model         String?            // AI model that drafted it
+
+  status        EmailStatus @default(DRAFTED)
+  channel       SendChannel @default(RESEND)
+  providerMessageId String?        // Resend/SMTP id for webhook correlation
+
+  approvedAt    DateTime?          // human approval gate
+  scheduledAt   DateTime?
+  sentAt        DateTime?
+  attempts      Int    @default(0)
+  lastError     String? @db.Text
+
+  // tracking
+  openedAt      DateTime?
+  openCount     Int    @default(0)
+  clickedAt     DateTime?
+  clickCount    Int    @default(0)
+  repliedAt     DateTime?
+  bouncedAt     DateTime?
+  complainedAt  DateTime?
+  unsubscribedAt DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign       Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  lead           Lead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  contact        Contact?        @relation(fields: [contactId], references: [id])
+  senderIdentity SenderIdentity? @relation(fields: [senderIdentityId], references: [id])
+  events         EmailEvent[]
+
+  @@index([userId])
+  @@index([campaignId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([providerMessageId])
+}
+
+enum EmailStatus {
+  DRAFTED
+  PENDING_APPROVAL
+  APPROVED
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  REPLIED
+  BOUNCED
+  COMPLAINED
+  UNSUBSCRIBED
+  FAILED
+  CANCELED
+}
+
+// Append-only outreach history / webhook event log.
+model EmailEvent {
+  id        String @id @default(cuid())
+  emailId   String
+  type      String              // delivered, opened, clicked, bounced, complained, replied
+  payload   Json?
+  occurredAt DateTime @default(now())
+
+  email EmailMessage @relation(fields: [emailId], references: [id], onDelete: Cascade)
+
+  @@index([emailId])
+  @@index([type])
+}
+
+// Global per-user suppression list (unsubscribes, complaints, hard bounces, manual).
+// Enforced before any send. Never email a suppressed address.
+model Suppression {
+  id        String  @id @default(cuid())
+  userId    String
+  email     String
+  reason    String              // unsubscribe | complaint | bounce | manual
+  createdAt DateTime @default(now())
+
+  @@unique([userId, email])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// METRICS / ABUSE / AUDIT / AGENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Daily rollup per campaign for the dashboard (STEP 8).
+model CampaignMetric {
+  id          String   @id @default(cuid())
+  campaignId  String
+  date        DateTime @db.Date
+  discovered  Int @default(0)
+  qualified   Int @default(0)
+  sent        Int @default(0)
+  delivered   Int @default(0)
+  opened      Int @default(0)
+  clicked     Int @default(0)
+  replied     Int @default(0)
+  bounced     Int @default(0)
+  converted   Int @default(0)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date])
+}
+
+// Rate-limit / quota counters (anti-abuse). One row per user per window key.
+model UsageCounter {
+  id        String   @id @default(cuid())
+  userId    String
+  scope     String              // "emails:day", "ai:tokens:day", "discovery:day"
+  windowKey String              // e.g. "2026-06-20"
+  count     Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scope, windowKey])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String              // product.analyze, lead.discover, email.send, key.update ...
+  entity    String?
+  entityId  String?
+  metadata  Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+}
+
+// Autonomous agent run log (AI AGENT MODE).
+model AgentRun {
+  id          String   @id @default(cuid())
+  userId      String?
+  campaignId  String?
+  trigger     String              // "cron" | "manual"
+  status      AgentRunStatus @default(RUNNING)
+  stats       Json?               // {discovered, scored, qualified, drafted, queued}
+  error       String?  @db.Text
+  startedAt   DateTime @default(now())
+  finishedAt  DateTime?
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum AgentRunStatus {
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
