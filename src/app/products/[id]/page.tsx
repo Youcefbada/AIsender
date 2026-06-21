@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ActionButton } from "@/components/forms/action-button";
 import { CampaignForm } from "@/components/forms/campaign-form";
+import { getI18n } from "@/lib/i18n/server";
 
 export default async function ProductDetail({
   params,
@@ -13,6 +14,7 @@ export default async function ProductDetail({
   params: Promise<{ id: string }>;
 }) {
   const userId = await requirePageUser();
+  const { t } = await getI18n();
   const { id } = await params;
   const product = await prisma.product.findFirst({
     where: { id, userId },
@@ -33,8 +35,8 @@ export default async function ProductDetail({
         </div>
         <ActionButton
           endpoint={`/api/products/${product.id}/analyze`}
-          idle={a ? "Re-analyze" : "Analyze product"}
-          busy="Analyzing…"
+          idle={a ? t.productDetail.reanalyze : t.productDetail.analyze}
+          busy={t.productDetail.analyzing}
         />
       </div>
 
@@ -42,29 +44,29 @@ export default async function ProductDetail({
 
       {!a && (
         <p className="mt-6 text-sm text-[var(--muted-foreground)]">
-          Run analysis to generate ICPs, personas, and outreach angles.
+          {t.productDetail.runHint}
         </p>
       )}
 
       {a && (
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <Card>
-            <CardHeader><CardTitle>Analysis</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t.productDetail.analysis}</CardTitle></CardHeader>
             <CardContent className="space-y-3 text-sm">
               <p>{a.summary}</p>
               <div className="flex flex-wrap gap-1">
                 <Badge tone="blue">{a.audienceType}</Badge>
                 {a.pricingTier && <Badge>{a.pricingTier}</Badge>}
-                {a.buyingIntent && <Badge tone="amber">intent: {a.buyingIntent}</Badge>}
+                {a.buyingIntent && <Badge tone="amber">{a.buyingIntent}</Badge>}
               </div>
-              <Section title="Benefits" items={list(a.benefits)} />
-              <Section title="Pain points" items={list(a.painPoints)} />
-              <Section title="Outreach angles" items={list(a.outreachAngles)} />
+              <Section title={t.productDetail.benefits} items={list(a.benefits)} />
+              <Section title={t.productDetail.painPoints} items={list(a.painPoints)} />
+              <Section title={t.productDetail.angles} items={list(a.outreachAngles)} />
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>Ideal customer profiles</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t.productDetail.icps}</CardTitle></CardHeader>
             <CardContent className="space-y-3 text-sm">
               {product.icps.map((icp) => (
                 <div key={icp.id} className="rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
@@ -83,7 +85,7 @@ export default async function ProductDetail({
 
       {a && (
         <Card className="mt-6">
-          <CardHeader><CardTitle>Launch a campaign</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t.productDetail.launch}</CardTitle></CardHeader>
           <CardContent>
             <CampaignForm
               productId={product.id}

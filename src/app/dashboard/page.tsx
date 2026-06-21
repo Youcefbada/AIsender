@@ -4,11 +4,13 @@ import { requirePageUser } from "@/lib/page-auth";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getI18n } from "@/lib/i18n/server";
 
 // Approval-queue-first dashboard (STEP 8). The daily human action is approving
 // drafts, so it leads. Funnel counts make "quality over quantity" visible.
 export default async function DashboardPage() {
   const userId = await requirePageUser();
+  const { t } = await getI18n();
 
   const [pending, emailCounts, leadCounts] = await Promise.all([
     prisma.emailMessage.findMany({
@@ -32,15 +34,15 @@ export default async function DashboardPage() {
 
   return (
     <AppShell>
-      <h1 className="text-xl font-semibold">Dashboard</h1>
+      <h1 className="text-xl font-semibold">{t.dashboard.title}</h1>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[
-          ["Sent", sent],
-          ["Open rate", rate(opened)],
-          ["Click rate", rate(clicked)],
-          ["Reply rate", rate(replied)],
-          ["Pending", pending.length],
+          [t.dashboard.sent, sent],
+          [t.dashboard.openRate, rate(opened)],
+          [t.dashboard.clickRate, rate(clicked)],
+          [t.dashboard.replyRate, rate(replied)],
+          [t.dashboard.pending, pending.length],
         ].map(([label, v]) => (
           <Card key={label as string}><CardContent className="p-4">
             <div className="text-2xl font-semibold">{v as string | number}</div>
@@ -50,20 +52,20 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-[var(--muted-foreground)]">
-        <span>Funnel:</span>
-        <Badge>Discovered {ls("DISCOVERED")}</Badge>→
-        <Badge tone="green">Qualified {ls("QUALIFIED")}</Badge>→
-        <Badge tone="blue">Drafted {ls("DRAFTED")}</Badge>→
-        <Badge tone="blue">Contacted {ls("CONTACTED")}</Badge>→
-        <Badge tone="green">Replied {ls("REPLIED")}</Badge>
+        <span>{t.dashboard.funnel}</span>
+        <Badge>{t.dashboard.discovered} {ls("DISCOVERED")}</Badge>→
+        <Badge tone="green">{t.dashboard.qualified} {ls("QUALIFIED")}</Badge>→
+        <Badge tone="blue">{t.dashboard.drafted} {ls("DRAFTED")}</Badge>→
+        <Badge tone="blue">{t.dashboard.contacted} {ls("CONTACTED")}</Badge>→
+        <Badge tone="green">{t.dashboard.replied} {ls("REPLIED")}</Badge>
       </div>
 
-      <h2 className="mt-8 text-lg font-medium">Approval queue</h2>
+      <h2 className="mt-8 text-lg font-medium">{t.dashboard.approvalQueue}</h2>
       <div className="mt-3 space-y-3">
         {pending.length === 0 && (
           <p className="text-sm text-[var(--muted-foreground)]">
-            Nothing waiting. The agent queues drafts on its next run.{" "}
-            <Link href="/campaigns" className="underline">Go to campaigns →</Link>
+            {t.dashboard.nothingWaiting}{" "}
+            <Link href="/campaigns" className="underline">{t.dashboard.goToCampaigns}</Link>
           </p>
         )}
         {pending.map((e) => (
@@ -71,7 +73,7 @@ export default async function DashboardPage() {
             <div className="font-medium">
               {e.lead.company}{" "}
               <span className="text-xs text-[var(--muted-foreground)]">
-                · score {e.lead.score?.total ?? "—"} · {e.contact?.email}
+                · {t.emails.score} {e.lead.score?.total ?? "—"} · {e.contact?.email}
               </span>
             </div>
             <div className="mt-1 text-sm font-medium">{e.subject}</div>
@@ -79,7 +81,7 @@ export default async function DashboardPage() {
           </CardContent></Card>
         ))}
         {pending.length > 0 && (
-          <Link href="/emails" className="text-sm underline">Review all in approval queue →</Link>
+          <Link href="/emails" className="text-sm underline">{t.dashboard.reviewAll}</Link>
         )}
       </div>
     </AppShell>

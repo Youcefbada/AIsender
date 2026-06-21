@@ -4,9 +4,11 @@ import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ActionButton } from "@/components/forms/action-button";
+import { getI18n } from "@/lib/i18n/server";
 
 export default async function EmailsPage() {
   const userId = await requirePageUser();
+  const { t } = await getI18n();
   const pending = await prisma.emailMessage.findMany({
     where: { userId, status: "PENDING_APPROVAL" },
     orderBy: { createdAt: "desc" },
@@ -16,17 +18,12 @@ export default async function EmailsPage() {
 
   return (
     <AppShell>
-      <h1 className="text-xl font-semibold">Approval queue</h1>
-      <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-        Review each draft. Approve to release it to the send queue (throttled to the
-        campaign's daily limit + send window), or cancel to discard.
-      </p>
+      <h1 className="text-xl font-semibold">{t.emails.title}</h1>
+      <p className="mt-1 text-sm text-[var(--muted-foreground)]">{t.emails.subtitle}</p>
 
       <div className="mt-5 space-y-4">
         {pending.length === 0 && (
-          <p className="text-sm text-[var(--muted-foreground)]">
-            Nothing waiting. Run a campaign pipeline to generate drafts.
-          </p>
+          <p className="text-sm text-[var(--muted-foreground)]">{t.emails.nothing}</p>
         )}
         {pending.map((e) => (
           <Card key={e.id}>
@@ -39,11 +36,11 @@ export default async function EmailsPage() {
                       · {e.contact?.email} · {e.campaign.name}
                     </span>
                   </div>
-                  <Badge tone="green" className="mt-1">score {e.lead.score?.total ?? "—"}</Badge>
+                  <Badge tone="green" className="mt-1">{t.emails.score} {e.lead.score?.total ?? "—"}</Badge>
                 </div>
                 <div className="flex gap-2">
-                  <ActionButton size="sm" endpoint={`/api/emails/${e.id}/approve`} idle="Approve" busy="…" />
-                  <ActionButton size="sm" variant="outline" endpoint={`/api/emails/${e.id}/cancel`} idle="Cancel" busy="…" confirm="Discard this draft?" />
+                  <ActionButton size="sm" endpoint={`/api/emails/${e.id}/approve`} idle={t.common.approve} busy="…" />
+                  <ActionButton size="sm" variant="outline" endpoint={`/api/emails/${e.id}/cancel`} idle={t.common.cancel} busy="…" confirm={t.emails.discardConfirm} />
                 </div>
               </div>
               <div className="mt-3 rounded-md border p-3 text-sm" style={{ borderColor: "var(--border)" }}>

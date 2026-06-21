@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/components/i18n-provider";
 
 export function CsvImport({ campaignId }: { campaignId?: string }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [csv, setCsv] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -32,20 +34,17 @@ export function CsvImport({ campaignId }: { campaignId?: string }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-[var(--muted-foreground)]">
-        CSV headers: <code>company, website, email, name, position, industry, companysize, geo</code>.
-        Only <code>company</code> is required.
-      </p>
+      <p className="text-sm text-[var(--muted-foreground)]">{t.csv.headers}</p>
       <input type="file" accept=".csv,text/csv" onChange={onFile} className="text-sm" />
       <Textarea
         value={csv}
         onChange={(e) => setCsv(e.target.value)}
-        placeholder="…or paste CSV here"
+        placeholder={t.csv.paste}
         className="min-h-[140px] font-mono text-xs"
       />
       {result && <p className="text-sm">{result}</p>}
       <Button onClick={importCsv} disabled={loading || !csv.trim()}>
-        {loading ? "Importing…" : "Import leads"}
+        {loading ? t.csv.importing : t.csv.import}
       </Button>
     </div>
   );

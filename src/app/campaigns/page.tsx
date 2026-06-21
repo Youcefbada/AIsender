@@ -4,9 +4,11 @@ import { requirePageUser } from "@/lib/page-auth";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getI18n } from "@/lib/i18n/server";
 
 export default async function CampaignsPage() {
   const userId = await requirePageUser();
+  const { t } = await getI18n();
   const campaigns = await prisma.campaign.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
@@ -18,11 +20,11 @@ export default async function CampaignsPage() {
 
   return (
     <AppShell>
-      <h1 className="text-xl font-semibold">Campaigns</h1>
+      <h1 className="text-xl font-semibold">{t.campaigns.title}</h1>
       <div className="mt-4 space-y-3">
         {campaigns.length === 0 && (
           <p className="text-sm text-[var(--muted-foreground)]">
-            No campaigns yet. Open a product and launch one.
+            {t.campaigns.none}
           </p>
         )}
         {campaigns.map((c) => (
@@ -35,9 +37,9 @@ export default async function CampaignsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge tone={c.status === "ACTIVE" ? "green" : "default"}>{c.status}</Badge>
-                  <Badge>{c._count.leads} leads</Badge>
-                  <Badge>{c._count.emails} emails</Badge>
-                  <Badge tone={c.autoSend ? "amber" : "blue"}>{c.autoSend ? "auto-send" : "approval"}</Badge>
+                  <Badge>{c._count.leads} {t.campaigns.leads}</Badge>
+                  <Badge>{c._count.emails} {t.campaigns.emails}</Badge>
+                  <Badge tone={c.autoSend ? "amber" : "blue"}>{c.autoSend ? t.campaigns.autoSend : t.campaigns.approval}</Badge>
                 </div>
               </CardContent>
             </Card>

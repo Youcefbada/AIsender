@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/components/i18n-provider";
 
 export function ProductForm() {
   const router = useRouter();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,14 +41,14 @@ export function ProductForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
-      <Input name="name" placeholder="Product name" required />
-      <Input name="url" type="url" placeholder="https://product-url.com" required />
-      <Input name="affiliateUrl" type="url" placeholder="Affiliate URL (optional)" />
-      <Textarea name="description" placeholder="What does it do? Who is it for?" required />
-      <Textarea name="notes" placeholder="Optional notes" />
+      <Input name="name" placeholder={t.products.name} required />
+      <Input name="url" type="url" placeholder={t.products.url} required />
+      <Input name="affiliateUrl" type="url" placeholder={t.products.affiliate} />
+      <Textarea name="description" placeholder={t.products.description} required />
+      <Textarea name="notes" placeholder={t.products.notes} />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" disabled={loading}>
-        {loading ? "Creating…" : "Create product"}
+        {loading ? t.products.creating : t.products.create}
       </Button>
     </form>
   );

@@ -6,9 +6,11 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/components/i18n-provider";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +35,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       });
       if (!res.ok) {
         setLoading(false);
-        setError((await res.json()).error ?? "Could not register");
+        setError((await res.json()).error ?? t.auth.couldNotRegister);
         return;
       }
     }
@@ -45,7 +47,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     });
     setLoading(false);
     if (result?.error) {
-      setError("Invalid username or password");
+      setError(t.auth.invalid);
       return;
     }
     router.push("/dashboard");
@@ -54,30 +56,30 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
-      <Input name="username" placeholder="Username" autoComplete="username" required />
+      <Input name="username" placeholder={t.auth.username} autoComplete="username" required />
       {mode === "register" && (
         <>
-          <Input name="email" type="email" placeholder="Email (optional)" autoComplete="email" />
-          <Input name="name" placeholder="Display name (optional)" />
+          <Input name="email" type="email" placeholder={t.auth.emailOptional} autoComplete="email" />
+          <Input name="name" placeholder={t.auth.displayName} />
         </>
       )}
       <Input
         name="password"
         type="password"
-        placeholder="Password"
+        placeholder={t.auth.password}
         autoComplete={mode === "login" ? "current-password" : "new-password"}
         minLength={8}
         required
       />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+        {loading ? t.common.pleaseWait : mode === "login" ? t.auth.signInBtn : t.auth.createBtn}
       </Button>
       <p className="text-center text-sm text-[var(--muted-foreground)]">
         {mode === "login" ? (
-          <>No account? <Link href="/signup" className="underline">Sign up</Link></>
+          <>{t.auth.noAccount} <Link href="/signup" className="underline">{t.auth.signUp}</Link></>
         ) : (
-          <>Have an account? <Link href="/login" className="underline">Sign in</Link></>
+          <>{t.auth.haveAccount} <Link href="/login" className="underline">{t.auth.signInBtn}</Link></>
         )}
       </p>
     </form>

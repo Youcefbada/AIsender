@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ActionButton } from "@/components/forms/action-button";
 import { CsvImport } from "@/components/forms/csv-import";
+import { getI18n } from "@/lib/i18n/server";
 
 export default async function CampaignDetail({
   params,
@@ -14,6 +15,7 @@ export default async function CampaignDetail({
   params: Promise<{ id: string }>;
 }) {
   const userId = await requirePageUser();
+  const { t } = await getI18n();
   const { id } = await params;
   const campaign = await prisma.campaign.findFirst({
     where: { id, userId },
@@ -39,25 +41,25 @@ export default async function CampaignDetail({
         <div>
           <h1 className="text-xl font-semibold">{campaign.name}</h1>
           <div className="text-xs text-[var(--muted-foreground)]">
-            {campaign.product.name} · min score {campaign.minScore} · {campaign.dailyLimit}/day ·{" "}
-            {campaign.autoSend ? "auto-send" : "approval gate"}
+            {campaign.product.name} · {t.campaignForm.minScore} {campaign.minScore} · {campaign.dailyLimit}/d ·{" "}
+            {campaign.autoSend ? t.campaigns.autoSend : t.campaigns.approval}
           </div>
         </div>
-        <ActionButton endpoint={`/api/campaigns/${id}/run`} idle="Run pipeline now" busy="Running…" />
+        <ActionButton endpoint={`/api/campaigns/${id}/run`} idle={t.campaigns.runNow} busy={t.campaigns.running} />
       </div>
 
       {lastRun && (
         <p className="mt-2 text-xs text-[var(--muted-foreground)]">
-          Last run: {lastRun.status} · {JSON.stringify(lastRun.stats ?? {})}
+          {t.campaigns.lastRun} {lastRun.status} · {JSON.stringify(lastRun.stats ?? {})}
         </p>
       )}
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          ["Drafted", emailStat("PENDING_APPROVAL") + emailStat("APPROVED")],
-          ["Sent", emailStat("SENT") + emailStat("DELIVERED") + emailStat("OPENED") + emailStat("CLICKED")],
-          ["Opened", emailStat("OPENED") + emailStat("CLICKED")],
-          ["Replied", emailStat("REPLIED")],
+          [t.campaigns.drafted, emailStat("PENDING_APPROVAL") + emailStat("APPROVED")],
+          [t.campaigns.sent, emailStat("SENT") + emailStat("DELIVERED") + emailStat("OPENED") + emailStat("CLICKED")],
+          [t.campaigns.opened, emailStat("OPENED") + emailStat("CLICKED")],
+          [t.campaigns.replied, emailStat("REPLIED")],
         ].map(([l, n]) => (
           <Card key={l as string}><CardContent className="p-4">
             <div className="text-2xl font-semibold">{n as number}</div>
@@ -68,9 +70,9 @@ export default async function CampaignDetail({
 
       <div className="mt-6 grid gap-4 md:grid-cols-[1fr_360px]">
         <Card>
-          <CardHeader><CardTitle>Leads</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t.campaigns.leadsTitle}</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {leads.length === 0 && <p className="text-sm text-[var(--muted-foreground)]">No leads yet — import a CSV or run the pipeline.</p>}
+            {leads.length === 0 && <p className="text-sm text-[var(--muted-foreground)]">{t.campaigns.noLeads}</p>}
             {leads.map((l) => (
               <div key={l.id} className="flex items-center justify-between border-b py-1 text-sm" style={{ borderColor: "var(--border)" }}>
                 <div>
@@ -86,13 +88,13 @@ export default async function CampaignDetail({
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle>Import leads</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t.campaigns.importLeads}</CardTitle></CardHeader>
           <CardContent><CsvImport campaignId={id} /></CardContent>
         </Card>
       </div>
 
       <p className="mt-4 text-sm">
-        <Link href="/emails" className="underline">Review drafted emails →</Link>
+        <Link href="/emails" className="underline">{t.campaigns.reviewDrafts}</Link>
       </p>
     </AppShell>
   );

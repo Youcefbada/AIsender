@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useI18n } from "@/components/i18n-provider";
 
 type Provider = "GEMINI" | "GROQ" | "OPENROUTER" | "RESEND" | "SERPER" | "SMTP";
 
@@ -16,6 +17,7 @@ const SIMPLE: { provider: Provider; label: string; hint: string }[] = [
 ];
 
 export function ApiKeysForm() {
+  const { t } = useI18n();
   const [saved, setSaved] = useState<Provider[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -59,28 +61,25 @@ export function ApiKeysForm() {
 
   return (
     <div className="space-y-4 text-sm">
-      <p className="text-[var(--muted-foreground)]">
-        Your keys are encrypted at rest and used only for your campaigns. Set at least
-        one AI key (Gemini recommended) and one email key (Resend or SMTP).
-      </p>
+      <p className="text-[var(--muted-foreground)]">{t.settings.apiKeysIntro}</p>
 
       {SIMPLE.map(({ provider, label, hint }) => (
         <div key={provider} className="rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
           <div className="flex items-center justify-between">
             <label className="font-medium">{label}</label>
-            {saved.includes(provider) ? <Badge tone="green">saved</Badge> : <Badge tone="amber">not set</Badge>}
+            {saved.includes(provider) ? <Badge tone="green">{t.settings.saved}</Badge> : <Badge tone="amber">{t.settings.notSet}</Badge>}
           </div>
           <div className="mt-1 text-xs text-[var(--muted-foreground)]">{hint}</div>
           <div className="mt-2 flex gap-2">
             <Input
               type="password"
-              placeholder={saved.includes(provider) ? "•••••••• (enter to replace)" : "Paste key"}
+              placeholder={saved.includes(provider) ? t.settings.enterToReplace : t.settings.pasteKey}
               value={values[provider] ?? ""}
               onChange={(e) => setValues((v) => ({ ...v, [provider]: e.target.value }))}
             />
-            <Button size="sm" disabled={busy === provider} onClick={() => save(provider, values[provider] ?? "")}>Save</Button>
+            <Button size="sm" disabled={busy === provider} onClick={() => save(provider, values[provider] ?? "")}>{t.common.save}</Button>
             {saved.includes(provider) && (
-              <Button size="sm" variant="outline" disabled={busy === provider} onClick={() => remove(provider)}>Remove</Button>
+              <Button size="sm" variant="outline" disabled={busy === provider} onClick={() => remove(provider)}>{t.common.remove}</Button>
             )}
           </div>
         </div>
@@ -89,20 +88,20 @@ export function ApiKeysForm() {
       {/* SMTP (Brevo etc.) — multiple fields stored together */}
       <div className="rounded-md border p-3" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center justify-between">
-          <label className="font-medium">SMTP (e.g. Brevo — free 300/day)</label>
-          {saved.includes("SMTP") ? <Badge tone="green">saved</Badge> : <Badge tone="amber">not set</Badge>}
+          <label className="font-medium">{t.settings.smtpTitle}</label>
+          {saved.includes("SMTP") ? <Badge tone="green">{t.settings.saved}</Badge> : <Badge tone="amber">{t.settings.notSet}</Badge>}
         </div>
-        <div className="mt-1 text-xs text-[var(--muted-foreground)]">Email fallback · host smtp-relay.brevo.com, port 587</div>
+        <div className="mt-1 text-xs text-[var(--muted-foreground)]">{t.settings.smtpHint}</div>
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <Input placeholder="Host" value={values.smtpHost ?? ""} onChange={(e) => setValues((v) => ({ ...v, smtpHost: e.target.value }))} />
-          <Input placeholder="Port (587)" value={values.smtpPort ?? ""} onChange={(e) => setValues((v) => ({ ...v, smtpPort: e.target.value }))} />
-          <Input placeholder="User" value={values.smtpUser ?? ""} onChange={(e) => setValues((v) => ({ ...v, smtpUser: e.target.value }))} />
-          <Input type="password" placeholder="Password" value={values.smtpPass ?? ""} onChange={(e) => setValues((v) => ({ ...v, smtpPass: e.target.value }))} />
+          <Input placeholder={t.settings.host} value={values.smtpHost ?? ""} onChange={(e) => setValues((v) => ({ ...v, smtpHost: e.target.value }))} />
+          <Input placeholder={t.settings.port} value={values.smtpPort ?? ""} onChange={(e) => setValues((v) => ({ ...v, smtpPort: e.target.value }))} />
+          <Input placeholder={t.settings.user} value={values.smtpUser ?? ""} onChange={(e) => setValues((v) => ({ ...v, smtpUser: e.target.value }))} />
+          <Input type="password" placeholder={t.settings.password} value={values.smtpPass ?? ""} onChange={(e) => setValues((v) => ({ ...v, smtpPass: e.target.value }))} />
         </div>
         <div className="mt-2 flex gap-2">
-          <Button size="sm" disabled={busy === "SMTP"} onClick={saveSmtp}>Save SMTP</Button>
+          <Button size="sm" disabled={busy === "SMTP"} onClick={saveSmtp}>{t.settings.saveSmtp}</Button>
           {saved.includes("SMTP") && (
-            <Button size="sm" variant="outline" disabled={busy === "SMTP"} onClick={() => remove("SMTP")}>Remove</Button>
+            <Button size="sm" variant="outline" disabled={busy === "SMTP"} onClick={() => remove("SMTP")}>{t.common.remove}</Button>
           )}
         </div>
       </div>

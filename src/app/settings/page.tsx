@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SenderIdentityForm } from "@/components/forms/sender-identity-form";
 import { ApiKeysForm } from "@/components/forms/api-keys-form";
+import { getI18n } from "@/lib/i18n/server";
 
 export default async function SettingsPage() {
   const userId = await requirePageUser();
+  const { t } = await getI18n();
   const identities = await prisma.senderIdentity.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
@@ -15,21 +17,19 @@ export default async function SettingsPage() {
 
   return (
     <AppShell>
-      <h1 className="text-xl font-semibold">Settings</h1>
+      <h1 className="text-xl font-semibold">{t.settings.title}</h1>
 
       <Card className="mt-5">
-        <CardHeader><CardTitle>API keys</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t.settings.apiKeys}</CardTitle></CardHeader>
         <CardContent><ApiKeysForm /></CardContent>
       </Card>
 
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle>Sender identities</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t.settings.senderIdentities}</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
             {identities.length === 0 && (
-              <p className="text-[var(--muted-foreground)]">
-                Add a verified sending identity before launching campaigns.
-              </p>
+              <p className="text-[var(--muted-foreground)]">{t.settings.noSenders}</p>
             )}
             {identities.map((s) => (
               <div key={s.id} className="flex items-center justify-between border-b py-2" style={{ borderColor: "var(--border)" }}>
@@ -37,26 +37,23 @@ export default async function SettingsPage() {
                   <div className="font-medium">{s.fromName}</div>
                   <div className="text-xs text-[var(--muted-foreground)]">{s.fromEmail} · {s.channel}</div>
                 </div>
-                <Badge tone={s.verified ? "green" : "amber"}>{s.verified ? "verified" : "unverified"}</Badge>
+                <Badge tone={s.verified ? "green" : "amber"}>{s.verified ? t.settings.verified : t.settings.unverified}</Badge>
               </div>
             ))}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Add sender identity</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t.settings.addSender}</CardTitle></CardHeader>
           <CardContent><SenderIdentityForm /></CardContent>
         </Card>
       </div>
 
       <Card className="mt-4">
-        <CardHeader><CardTitle>Deliverability checklist</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t.settings.deliverability}</CardTitle></CardHeader>
         <CardContent className="text-sm text-[var(--muted-foreground)]">
           <ul className="ml-4 list-disc space-y-1">
-            <li>Authenticate your domain in Resend (SPF, DKIM, DMARC).</li>
-            <li>Warm up new domains slowly — keep daily volume low at first.</li>
-            <li>Every email carries unsubscribe + your mailing address automatically.</li>
-            <li>Bounces and complaints auto-add to your suppression list.</li>
+            {t.settings.checklist.map((item) => <li key={item}>{item}</li>)}
           </ul>
         </CardContent>
       </Card>

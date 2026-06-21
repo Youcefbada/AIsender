@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { signOut } from "@/lib/auth";
+import { getI18n } from "@/lib/i18n/server";
+import { LanguageSwitcher } from "./language-switcher";
 
-const links = [
-  ["/dashboard", "Dashboard"],
-  ["/products", "Products"],
-  ["/campaigns", "Campaigns"],
-  ["/leads", "Leads"],
-  ["/emails", "Approvals"],
-  ["/settings", "Settings"],
-];
+export async function Nav() {
+  const { t } = await getI18n();
+  const links: [string, string][] = [
+    ["/dashboard", t.nav.dashboard],
+    ["/products", t.nav.products],
+    ["/campaigns", t.nav.campaigns],
+    ["/leads", t.nav.leads],
+    ["/emails", t.nav.approvals],
+    ["/settings", t.nav.settings],
+  ];
 
-export function Nav() {
   return (
     <header className="border-b" style={{ borderColor: "var(--border)" }}>
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
@@ -26,16 +29,19 @@ export function Nav() {
             ))}
           </nav>
         </div>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/login" });
-          }}
-        >
-          <button className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
-            Sign out
-          </button>
-        </form>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/login" });
+            }}
+          >
+            <button className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+              {t.nav.signOut}
+            </button>
+          </form>
+        </div>
       </div>
     </header>
   );
