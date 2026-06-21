@@ -65,6 +65,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user && token.sub) session.user.id = token.sub;
       return session;
     },
+    // Force redirects onto our real domain (the platform reports an internal
+    // 0.0.0.0:3000 base, which would otherwise break post-login redirects).
+    async redirect({ url, baseUrl }) {
+      const base = config.appUrl || baseUrl;
+      if (url.startsWith("/")) return `${base}${url}`;
+      try {
+        const u = new URL(url);
+        const b = new URL(base);
+        return u.host === b.host ? url : `${base}${u.pathname}${u.search}`;
+      } catch {
+        return base;
+      }
+    },
   },
 });
 

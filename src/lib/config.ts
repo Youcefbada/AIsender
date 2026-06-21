@@ -21,10 +21,8 @@ export const config = {
   // Bearer token the cron scheduler must present to /api/agent/*.
   cronSecret: process.env.CRON_SECRET || "1ezlN3rKEZyjHPipG0OyQj1xC35+aHOi",
 
-  // Public base URL used to build absolute tracking/unsubscribe links in emails.
-  // Domain is optional for now — set this to your Hostinger URL when you have one
-  // (e.g. "https://marlinrch.shop") so open-tracking and unsubscribe links work.
-  appUrl: process.env.APP_URL || "",
+  // Public base URL used for tracking/unsubscribe links in emails and auth redirects.
+  appUrl: process.env.APP_URL || "https://fakherb.store",
 
   // Default sender (also configurable per user via Settings → Sender identity).
   emailFrom: process.env.EMAIL_FROM || "affiliate@luminax.pro",
