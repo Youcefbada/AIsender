@@ -131,9 +131,15 @@ export async function runCampaignPipeline(
 
   for (const lead of leads) {
     try {
-      // ── 2/3. SCORE + QUALIFY ──────────────────────────────────────────────
-      let qualified = lead.status !== "DISCOVERED";
+      // ── RESEARCH FIRST (best effort) so scoring sees real website content ──
       if (lead.status === "DISCOVERED") {
+        const r = await researchProspect(lead.id, aiKeys);
+        if (r) stats.researched++;
+      }
+
+      // ── SCORE + QUALIFY (uses the research we just gathered) ───────────────
+      let qualified = lead.status === "QUALIFIED" || lead.status === "CONTACT_FOUND";
+      if (lead.status === "DISCOVERED" || lead.status === "RESEARCHED") {
         const res = await scoreLead(lead.id, analysisLike, campaign.minScore, aiKeys);
         stats.scored++;
         qualified = res.qualified;
@@ -176,13 +182,7 @@ export async function runCampaignPipeline(
       if (suppressed) continue;
       stats.contactsFound++;
 
-      // ── 5. RESEARCH (best effort) ─────────────────────────────────────────
-      if (lead.status !== "RESEARCHED") {
-        const r = await researchProspect(lead.id, aiKeys);
-        if (r) stats.researched++;
-      }
-
-      // ── 6. DRAFT (respect the daily email ceiling) ────────────────────────
+      // ── DRAFT (respect the daily email ceiling) ───────────────────────────
       const already = await prisma.emailMessage.findFirst({
         where: { leadId: lead.id, stepOrder: 0 },
       });

@@ -73,7 +73,7 @@ export function scoringPrompt(input: {
     {
       role: "system" as const,
       content:
-        "You score how well a prospect matches a product. Be skeptical: most leads are NOT a strong fit. Respond ONLY with valid JSON.",
+        "You score how well a prospect matches a product. Score FAIRLY and calibrated: a clear industry / pain-point fit should land around 70-90; a plausible fit 50-70; only score below 40 when the prospect is clearly irrelevant. Don't penalize just because info is limited — infer from the company name, domain, and any research. Respond ONLY with valid JSON.",
     },
     {
       role: "user" as const,

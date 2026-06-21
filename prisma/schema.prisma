@@ -11,7 +11,7 @@ datasource db {
   // Hardcoded Supabase Session-pooler URL (IPv4) so no env setup is needed.
   // Password special chars are URL-encoded: / → %2F, % → %25, & → %26,
   // , → %2C, # → %23. Keep this repo PRIVATE.
-  url      = "postgresql://postgres.pkahtfqlcedraumcytiv:n%2F4q%25B%26pqBw%2Cf%23r@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
+  url      = "postgresql://postgres.pkahtfqlcedraumcytiv:n%2F4q%25B%26pqBw%2Cf%23r@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require&connection_limit=3&pool_timeout=20"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
