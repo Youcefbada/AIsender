@@ -43,14 +43,18 @@ export function complianceHeaders(emailId: string): Record<string, string> {
   };
 }
 
-/** Append required footer + tracking pixel to an HTML body. */
+/** Append a tracked CTA button + required footer + tracking pixel to an HTML body. */
 export function decorateHtml(opts: {
   emailId: string;
   html: string;
   fromName: string;
   mailingAddress: string;
   track: boolean;
+  cta?: { url: string; label: string };
 }): string {
+  const cta = opts.cta
+    ? `<p style="margin:22px 0"><a href="${trackedLink(opts.emailId, opts.cta.url)}" style="background:#4f46e5;color:#ffffff;padding:11px 20px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">${opts.cta.label}</a></p>`
+    : "";
   const footer = `
   <hr style="border:none;border-top:1px solid #e4e4e7;margin:24px 0" />
   <p style="font-size:12px;color:#71717a;line-height:1.5">
@@ -61,7 +65,7 @@ export function decorateHtml(opts: {
   const pixel = opts.track
     ? `<img src="${trackingPixelUrl(opts.emailId)}" width="1" height="1" alt="" style="display:none" />`
     : "";
-  return `${opts.html}${footer}${pixel}`;
+  return `${opts.html}${cta}${footer}${pixel}`;
 }
 
 export function decorateText(opts: {
@@ -69,6 +73,8 @@ export function decorateText(opts: {
   text: string;
   fromName: string;
   mailingAddress: string;
+  cta?: { url: string; label: string };
 }): string {
-  return `${opts.text}\n\n--\n${opts.fromName} · ${opts.mailingAddress}\nUnsubscribe: ${unsubscribeUrl(opts.emailId)}`;
+  const cta = opts.cta ? `\n\n${opts.cta.label}: ${trackedLink(opts.emailId, opts.cta.url)}` : "";
+  return `${opts.text}${cta}\n\n--\n${opts.fromName} · ${opts.mailingAddress}\nUnsubscribe: ${unsubscribeUrl(opts.emailId)}`;
 }

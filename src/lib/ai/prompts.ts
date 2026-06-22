@@ -146,6 +146,8 @@ Rules:
 - Body 80-130 words. One clear, low-friction ask.
 - Reference something real about them. NEVER invent facts.
 - Plain, conversational. No "I hope this finds you well".
+- End with a short call-to-action inviting them to take a look. A clickable
+  button with the link is added automatically — do NOT paste any URL yourself.
 
 Return JSON: { "subject": "...", "bodyText": "...", "bodyHtml": "<p>...</p>" }`,
     },

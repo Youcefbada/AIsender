@@ -28,7 +28,7 @@ export async function dispatchDueEmails(
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: now } }],
     },
     include: {
-      campaign: true,
+      campaign: { include: { product: { select: { name: true, url: true, affiliateUrl: true } } } },
       contact: true,
       senderIdentity: true,
     },
@@ -78,6 +78,11 @@ export async function dispatchDueEmails(
       // Use the sender's own Resend/SMTP credentials when they've set them.
       const creds = await getUserEmailCreds(email.userId);
 
+      // Tracked call-to-action button → the affiliate (or product) link.
+      const product = email.campaign.product;
+      const ctaUrl = product.affiliateUrl || product.url;
+      const cta = ctaUrl ? { url: ctaUrl, label: product.name } : undefined;
+
       const result = await sendEmail(
         {
           to,
@@ -85,8 +90,8 @@ export async function dispatchDueEmails(
           fromEmail,
           replyTo: email.senderIdentity?.replyTo ?? undefined,
           subject: email.subject,
-          html: decorateHtml({ emailId: email.id, html: email.bodyHtml, fromName, mailingAddress, track: true }),
-          text: decorateText({ emailId: email.id, text: email.bodyText, fromName, mailingAddress }),
+          html: decorateHtml({ emailId: email.id, html: email.bodyHtml, fromName, mailingAddress, track: true, cta }),
+          text: decorateText({ emailId: email.id, text: email.bodyText, fromName, mailingAddress, cta }),
           headers: complianceHeaders(email.id),
         },
         email.senderIdentity?.channel ?? "RESEND",
