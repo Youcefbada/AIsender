@@ -14,7 +14,7 @@ import {
 
 export async function dispatchDueEmails(
   now = new Date(),
-  max = 12,
+  max = 15,
 ): Promise<{ sent: number; skipped: number }> {
   let sent = 0;
   let skipped = 0;

@@ -186,6 +186,22 @@ export async function runCampaignPipeline(
           await prisma.lead.update({ where: { id: lead.id }, data: { status: "CONTACT_FOUND" } });
         }
       }
+
+      // Fallback: no email published on the site → try common business role
+      // addresses and keep the first whose domain has a real mail server (MX).
+      // This dramatically raises how many qualified leads become contactable.
+      if (!contact && lead.domain) {
+        for (const local of ["info", "contact", "hello", "sales", "office"]) {
+          const email = `${local}@${lead.domain}`;
+          const verdict = await validateEmail(email);
+          if (verdict.verdict === "INVALID") continue;
+          contact = await prisma.contact.create({
+            data: { leadId: lead.id, email, source: "role-guess", emailStatus: verdict.verdict, isPrimary: true },
+          });
+          await prisma.lead.update({ where: { id: lead.id }, data: { status: "CONTACT_FOUND" } });
+          break;
+        }
+      }
       if (!contact?.email) continue;
 
       // suppression check

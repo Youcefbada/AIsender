@@ -9,9 +9,9 @@ function dayKey(d = new Date()): string {
 }
 
 export const QUOTAS = {
-  "emails:day": 50, // hard ceiling regardless of campaign settings
-  "discovery:day": 200, // leads discovered per user/day
-  "ai:calls:day": 1000,
+  "emails:day": 100, // hard ceiling on drafts/day (sending is capped per-campaign)
+  "discovery:day": 500, // leads discovered per user/day
+  "ai:calls:day": 3000,
 } as const;
 
 export type QuotaScope = keyof typeof QUOTAS;

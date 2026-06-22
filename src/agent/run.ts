@@ -9,7 +9,7 @@ import { runCampaignPipeline } from "./pipeline";
 
 export async function runAllActiveCampaigns(
   trigger: "cron" | "manual" = "cron",
-  maxLeadsPerCampaign = 10,
+  maxLeadsPerCampaign = 25,
 ) {
   const campaigns = await prisma.campaign.findMany({
     where: { status: "ACTIVE" },
