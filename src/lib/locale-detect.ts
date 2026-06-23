@@ -30,6 +30,23 @@ export function detectLanguage(_geo?: string | null, domain?: string | null): st
   return "English";
 }
 
+// Action-oriented CTA button labels per language (lifts click-through vs. a
+// bare product name). Falls back to English.
+const CTA_LABEL: Record<string, string> = {
+  English: "See how it works →",
+  French: "Voir comment ça marche →",
+  German: "Mehr erfahren →",
+  Spanish: "Descúbrelo →",
+  Italian: "Scopri di più →",
+  Dutch: "Ontdek meer →",
+  Portuguese: "Saiba mais →",
+  Arabic: "اكتشف المزيد ←",
+};
+
+export function ctaLabel(language: string): string {
+  return CTA_LABEL[language] || CTA_LABEL.English;
+}
+
 // High-value markets to spread discovery across when a campaign sets none.
 export const DEFAULT_GEOS = [
   "United States",

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email/send";
 import { getUserEmailCreds } from "@/lib/keys";
 import { config } from "@/lib/config";
+import { detectLanguage, ctaLabel } from "@/lib/locale-detect";
 import {
   complianceHeaders,
   decorateHtml,
@@ -31,6 +32,7 @@ export async function dispatchDueEmails(
       campaign: { include: { product: { select: { name: true, url: true, affiliateUrl: true } } } },
       contact: true,
       senderIdentity: true,
+      lead: { select: { domain: true, geo: true } },
     },
     take: max,
   });
@@ -78,10 +80,12 @@ export async function dispatchDueEmails(
       // Use the sender's own Resend/SMTP credentials when they've set them.
       const creds = await getUserEmailCreds(email.userId);
 
-      // Tracked call-to-action button → the affiliate (or product) link.
+      // Tracked call-to-action button → the affiliate (or product) link, with an
+      // action-oriented label in the recipient's language (lifts click-through).
       const product = email.campaign.product;
       const ctaUrl = product.affiliateUrl || product.url;
-      const cta = ctaUrl ? { url: ctaUrl, label: product.name } : undefined;
+      const lang = detectLanguage(email.lead?.geo, email.lead?.domain);
+      const cta = ctaUrl ? { url: ctaUrl, label: ctaLabel(lang) } : undefined;
 
       const result = await sendEmail(
         {

@@ -39,15 +39,22 @@ export async function analyzeProduct(productId: string) {
     data: { status: "ANALYZING" },
   });
 
-  const { content, model } = await chatComplete({
-    task: "analysis",
-    providerKeys,
-    jsonMode: true,
-    temperature: 0.5,
-    messages: productAnalysisPrompt(product),
-  });
-
-  const parsed = parseJsonResponse<AnalysisJson>(content);
+  let model: string, parsed: AnalysisJson;
+  try {
+    const res = await chatComplete({
+      task: "analysis",
+      providerKeys,
+      jsonMode: true,
+      temperature: 0.5,
+      messages: productAnalysisPrompt(product),
+    });
+    model = res.model;
+    parsed = parseJsonResponse<AnalysisJson>(res.content);
+  } catch (err) {
+    // Don't leave the product stuck in ANALYZING — reset so it can be retried.
+    await prisma.product.update({ where: { id: productId }, data: { status: "DRAFT" } });
+    throw err;
+  }
 
   const analysis = await prisma.$transaction(async (tx) => {
     await tx.productAnalysis.deleteMany({ where: { productId } });
