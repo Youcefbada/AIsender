@@ -46,6 +46,7 @@ export async function generateEmail(args: GenerateArgs) {
       productName: campaign.product.name,
       productUrl: campaign.product.url,
       affiliateUrl: campaign.product.affiliateUrl,
+      productSummary: analysis?.summary,
       outreachAngle: angles[(args.stepOrder ?? 0) % angles.length],
       benefit: benefits[(args.stepOrder ?? 0) % benefits.length],
       senderName: campaign.senderIdentity?.fromName ?? "The team",

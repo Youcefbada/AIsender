@@ -106,6 +106,7 @@ export function emailPrompt(input: {
   productName: string;
   productUrl: string;
   affiliateUrl?: string | null;
+  productSummary?: string;
   outreachAngle: string;
   benefit: string;
   senderName: string;
@@ -123,31 +124,34 @@ export function emailPrompt(input: {
     {
       role: "system" as const,
       content:
-        `You write short, human, genuinely personalized B2B outreach emails. Write the ENTIRE email (subject + body) in ${language}, fluent and native-sounding. NO hype, NO fake urgency, NO spam phrases, NO emoji. Reference a real, specific detail about THIS company so it reads like it was written just for them — never a template. Respond ONLY with valid JSON.`,
+        `You are an elite cold-email copywriter. You write short, punchy, personalized B2B emails that make the reader curious enough to click. Write the ENTIRE email (subject + body) in ${language}, native and fluent. Be SPECIFIC and CONFIDENT — never hedge. BANNED phrases: "I came across", "I hope this finds you", "likely", "I'm sure", "I noticed your", "as a leading". No hype, no emoji, no spam words ("free", "guarantee", "act now"). Use exactly ONE concrete, real detail about the company (from the research given) — never invent. Respond ONLY with valid JSON.`,
     },
     {
       role: "user" as const,
-      content: `Write a cold outreach email.
+      content: `Write a cold outreach email that earns a click.
 
 From: ${input.senderName}
-Product: ${input.productName} (${input.affiliateUrl || input.productUrl})
-Outreach angle: ${input.outreachAngle}
-Key benefit to highlight: ${input.benefit}
+Product: ${input.productName}
+What it actually does: ${input.productSummary || input.benefit}
+Best benefit to lead with: ${input.benefit}
+Angle: ${input.outreachAngle}
 ${input.stepPurpose ? `This is a follow-up. Purpose: ${input.stepPurpose}` : "This is the first email."}
 
 Recipient:
 Company: ${input.lead.company}
-Contact: ${input.lead.contactName || "(unknown — keep greeting generic but warm)"}
-Their services: ${input.lead.services || "unknown"}
-Specific details to reference: ${input.lead.hooks || "none — be honest, don't fabricate"}
+Contact: ${input.lead.contactName || "(no name — open with a natural line, NOT 'Dear team')"}
+What they do: ${input.lead.services || "unknown"}
+Real details (use ONE, naturally): ${input.lead.hooks || "none — stay concrete about their field, do NOT fabricate"}
 
-Rules:
-- Subject under 60 chars, specific, not clickbait.
-- Body 80-130 words. One clear, low-friction ask.
-- Reference something real about them. NEVER invent facts.
-- Plain, conversational. No "I hope this finds you well".
-- End with a short call-to-action inviting them to take a look. A clickable
-  button with the link is added automatically — do NOT paste any URL yourself.
+Structure (3-4 tight sentences):
+1) Open with a specific, true observation about THEM (use a real detail). No "I came across".
+2) Bridge to ONE concrete thing ${input.productName} does for a company like theirs — name a specific capability or result. NEVER write vague filler like "saves time" or "drives results" on its own; say what it actually does.
+3) End with a SHORT curiosity line, varied and tailored to them, that makes them want to see it (don't reuse a stock phrase, don't say "click"). A button is added right after, so do NOT write any URL.
+
+Hard rules:
+- 50-90 words TOTAL. Tight and concrete. Cut filler.
+- Subject: 3-6 words, specific + a little curiosity, lowercase fine, no clickbait, no "free".
+- Confident, human, conversational. One idea only. No hedging, no "Dear team", no signature block.
 
 Return JSON: { "subject": "...", "bodyText": "...", "bodyHtml": "<p>...</p>" }`,
     },
