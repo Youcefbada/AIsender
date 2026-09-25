@@ -283,6 +283,7 @@ export function OpportunityList({ initialOpportunities, profiles }: OpportunityL
           </select>
 
           <Input
+            aria-label="Search opportunities"
             placeholder="Search keywords / author..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
@@ -315,7 +316,7 @@ export function OpportunityList({ initialOpportunities, profiles }: OpportunityL
                     <Badge tone={opp.platform === "REDDIT" ? "amber" : opp.platform === "X" ? "blue" : "neutral"}>
                       {opp.platform}
                     </Badge>
-                    <Badge tone="neutral">{opp.opportunityType.replace(/_/g, " ")}</Badge>
+                    <Badge tone="default">{opp.opportunityType.replace(/_/g, " ")}</Badge>
                     {opp.authorUsername && (
                       <span className="text-xs font-medium">@{opp.authorUsername}</span>
                     )}
@@ -473,10 +474,10 @@ export function OpportunityList({ initialOpportunities, profiles }: OpportunityL
 
       {/* Suggested Message Modal */}
       {messageModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
           <Card className="w-full max-w-xl space-y-4 p-6 bg-[var(--background)]">
             <CardHeader className="p-0">
-              <CardTitle className="text-base font-semibold">Suggested Outreach Message</CardTitle>
+              <CardTitle id="modal-title" className="text-base font-semibold">Suggested Outreach Message</CardTitle>
               <p className="text-xs text-[var(--muted-foreground)]">
                 Review and edit before sending. Human-in-the-loop outreach ensures authenticity.
               </p>

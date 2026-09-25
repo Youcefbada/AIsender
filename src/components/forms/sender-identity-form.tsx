@@ -45,7 +45,7 @@ export function SenderIdentityForm() {
           <option value="SMTP">SMTP</option>
         </select>
       </label>
-      <Input name="mailingAddress" placeholder={t.senderForm.mailingAddress} required />
+      <Input name="mailingAddress" placeholder={t.senderForm.mailingAddress} aria-label={t.senderForm.mailingAddress} required />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" disabled={loading}>{loading ? t.senderForm.saving : t.senderForm.add}</Button>
     </form>
