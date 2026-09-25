@@ -8,6 +8,8 @@ import { ApiKeysForm } from "@/components/forms/api-keys-form";
 import { ActionButton } from "@/components/forms/action-button";
 import { getI18n } from "@/lib/i18n/server";
 
+import { UserCapabilityForm } from "@/components/forms/user-capability-form";
+
 export default async function SettingsPage() {
   const userId = await requirePageUser();
   const { t } = await getI18n();
@@ -19,6 +21,11 @@ export default async function SettingsPage() {
   return (
     <AppShell>
       <h1 className="text-xl font-semibold">{t.settings.title}</h1>
+
+      <Card className="mt-5">
+        <CardHeader><CardTitle>Developer & Agency Capabilities</CardTitle></CardHeader>
+        <CardContent><UserCapabilityForm /></CardContent>
+      </Card>
 
       <Card className="mt-5">
         <CardHeader><CardTitle>{t.settings.apiKeys}</CardTitle></CardHeader>

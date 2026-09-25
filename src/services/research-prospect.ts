@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { fetchHtml, htmlToText } from "@/lib/fetch-page";
 import { chatComplete, parseJsonResponse } from "@/lib/ai/openrouter";
+import { prospectResearchPrompt } from "@/lib/ai/prompts";
 import type { Provider } from "@/lib/ai/models";
 import type { Prisma } from "@prisma/client";
 
@@ -14,6 +15,21 @@ interface ResearchJson {
   aboutSummary: string;
   personalizationHooks: string[];
   techStack?: string[];
+}
+
+function isStringArray(v: unknown): v is string[] {
+  return Array.isArray(v) && v.every((x) => typeof x === "string");
+}
+
+function isResearchJson(d: unknown): d is ResearchJson {
+  const o = d as Record<string, unknown>;
+  return (
+    !!o &&
+    typeof o === "object" &&
+    isStringArray(o.services) &&
+    typeof o.aboutSummary === "string" &&
+    isStringArray(o.personalizationHooks)
+  );
 }
 
 export async function researchProspect(
@@ -33,30 +49,10 @@ export async function researchProspect(
     providerKeys,
     jsonMode: true,
     temperature: 0.3,
-    messages: [
-      {
-        role: "system",
-        content:
-          "You extract factual details from a company's website for outreach personalization. Only state what is supported by the text. NEVER invent facts. Respond ONLY with valid JSON.",
-      },
-      {
-        role: "user",
-        content: `Company: ${lead.company}
-Website text (truncated):
-"""${text}"""
-
-Return JSON:
-{
-  "services": ["concrete services/products they offer"],
-  "aboutSummary": "1-2 sentence factual summary",
-  "personalizationHooks": ["specific, real details an outreach email could reference"],
-  "techStack": ["only if evident, else empty"]
-}`,
-      },
-    ],
+    messages: prospectResearchPrompt({ company: lead.company, websiteText: text }),
   });
 
-  const parsed = parseJsonResponse<ResearchJson>(content);
+  const parsed = parseJsonResponse<ResearchJson>(content, isResearchJson);
 
   const research = await prisma.prospectResearch.upsert({
     where: { leadId },

@@ -13,6 +13,11 @@ export async function POST(req: Request) {
   if (auth !== `Bearer ${config.cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const results = await runAllActiveCampaigns("cron");
-  return NextResponse.json({ ok: true, results });
+  try {
+    const results = await runAllActiveCampaigns("cron");
+    return NextResponse.json({ ok: true, results });
+  } catch (err) {
+    console.error("agent run error", err);
+    return NextResponse.json({ error: "Agent run failed" }, { status: 500 });
+  }
 }

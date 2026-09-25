@@ -6,14 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/components/i18n-provider";
 
-type Provider = "GEMINI" | "GROQ" | "OPENROUTER" | "RESEND" | "SERPER" | "SMTP";
+type Provider = "GEMINI" | "GROQ" | "OPENROUTER" | "RESEND" | "SERPER" | "SMTP" | "REDDIT" | "HUNTER";
 
 const SIMPLE: { provider: Provider; label: string; hint: string }[] = [
   { provider: "GEMINI", label: "Google Gemini API key", hint: "AI (primary) · free ~1,500/day · aistudio.google.com/apikey" },
   { provider: "GROQ", label: "Groq API key", hint: "AI fallback · free · console.groq.com/keys" },
   { provider: "OPENROUTER", label: "OpenRouter API key", hint: "AI fallback · openrouter.ai/keys" },
-  { provider: "RESEND", label: "Resend API key", hint: "Email · free 100/day · resend.com" },
-  { provider: "SERPER", label: "Serper.dev API key", hint: "Lead discovery · free 2,500/mo · serper.dev" },
+  { provider: "SERPER", label: "Serper.dev API key", hint: "Web & Google demand discovery · free 2,500/mo · serper.dev" },
+  { provider: "REDDIT", label: "Reddit API token / client secret (Optional)", hint: "For authenticated Reddit search (public search works without key)" },
+  { provider: "HUNTER", label: "Hunter.io API key (Optional)", hint: "Contact enrichment adapter · free tier 50/mo · hunter.io" },
+  { provider: "RESEND", label: "Resend API key", hint: "Human-approved email sending · free 100/day · resend.com" },
 ];
 
 export function ApiKeysForm() {

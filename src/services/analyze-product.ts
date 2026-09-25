@@ -49,7 +49,19 @@ export async function analyzeProduct(productId: string) {
       messages: productAnalysisPrompt(product),
     });
     model = res.model;
-    parsed = parseJsonResponse<AnalysisJson>(res.content);
+    parsed = parseJsonResponse<AnalysisJson>(res.content, (d): d is AnalysisJson => {
+      const o = d as Record<string, unknown>;
+      return (
+        !!o &&
+        typeof o === "object" &&
+        typeof o.summary === "string" &&
+        Array.isArray(o.benefits) &&
+        Array.isArray(o.targetAudience) &&
+        Array.isArray(o.industries) &&
+        Array.isArray(o.painPoints) &&
+        Array.isArray(o.outreachAngles)
+      );
+    });
   } catch (err) {
     // Don't leave the product stuck in ANALYZING — reset so it can be retried.
     await prisma.product.update({ where: { id: productId }, data: { status: "DRAFT" } });

@@ -27,14 +27,17 @@ export async function GET(
           prisma.emailEvent.create({ data: { emailId, type: "clicked", payload: { target } } }),
         ]);
       }
+
+      // Only redirect to http(s) targets, and only for verified tokens, to
+      // avoid open-redirect abuse.
+      if (target && /^https?:\/\//i.test(target)) {
+        return NextResponse.redirect(target, 302);
+      }
+      return NextResponse.json({ ok: true });
     } catch {
-      // fall through to redirect regardless
+      // fall through to 404 below
     }
   }
 
-  // Only redirect to http(s) targets to avoid open-redirect abuse to other schemes.
-  if (target && /^https?:\/\//i.test(target)) {
-    return NextResponse.redirect(target, 302);
-  }
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ error: "Invalid link" }, { status: 404 });
 }

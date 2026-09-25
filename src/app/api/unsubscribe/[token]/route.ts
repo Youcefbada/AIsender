@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/email/compliance";
 
@@ -33,20 +34,34 @@ export async function POST(
   _req: Request,
   { params }: { params: Promise<{ token: string }> },
 ) {
-  const { token } = await params;
-  await unsubscribe(token);
-  return new Response(null, { status: 204 });
+  try {
+    const { token } = await params;
+    await unsubscribe(token);
+    return new Response(null, { status: 204 });
+  } catch (e) {
+    console.error("POST /api/unsubscribe/[token] error:", e);
+    return NextResponse.json(
+      { error: "Failed to process unsubscribe request" },
+      { status: 500 },
+    );
+  }
 }
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ token: string }> },
 ) {
-  const { token } = await params;
-  const ok = await unsubscribe(token);
-  const msg = ok
-    ? "You've been unsubscribed. You won't receive further emails."
-    : "This unsubscribe link is invalid or expired.";
+  let msg: string;
+  try {
+    const { token } = await params;
+    const ok = await unsubscribe(token);
+    msg = ok
+      ? "You've been unsubscribed. You won't receive further emails."
+      : "This unsubscribe link is invalid or expired.";
+  } catch (e) {
+    console.error("GET /api/unsubscribe/[token] error:", e);
+    msg = "Something went wrong while processing your unsubscribe request. Please try again later.";
+  }
   return new Response(
     `<!doctype html><html><body style="font-family:sans-serif;max-width:480px;margin:80px auto;padding:0 20px;color:#0a0a0a">
       <h2>Unsubscribe</h2><p>${msg}</p></body></html>`,

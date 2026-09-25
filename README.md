@@ -19,20 +19,20 @@ is warmed and you accept the risk.
 ## Stack
 
 Next.js 15 (App Router) · TypeScript · TailwindCSS v4 · shadcn-style UI ·
-MySQL · Prisma · NextAuth v5 · Resend + Brevo/SMTP fallback · free LLMs via
+PostgreSQL · Prisma · NextAuth v5 · Resend + Brevo/SMTP fallback · free LLMs via
 Gemini → Groq → OpenRouter (automatic cross-provider fallback) · Serper.dev
 discovery. Built to deploy on Hostinger Business at ~$0/month.
 
 ## Quick start
 
 ```bash
-cp .env.example .env        # fill DATABASE_URL (MySQL), AUTH_SECRET, ENCRYPTION_KEY, GEMINI_API_KEY, RESEND_API_KEY
+cp .env.example .env        # fill DATABASE_URL (PostgreSQL), AUTH_SECRET, ENCRYPTION_KEY, GEMINI_API_KEY, RESEND_API_KEY
 npm install
-npm run db:push             # create schema in your MySQL database
+npm run db:push             # create schema in your PostgreSQL database
 npm run dev                 # http://localhost:3000
 ```
 
-Deploying to **Hostinger Business** (Node.js, MySQL, free APIs)? See
+Deploying to **Hostinger Business** (Node.js, PostgreSQL, free APIs)? See
 [`docs/DEPLOY-HOSTINGER.md`](docs/DEPLOY-HOSTINGER.md).
 
 Generate the two required secrets:

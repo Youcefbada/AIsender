@@ -27,6 +27,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 });
     }
+    const { senderIdentityId, icpId } = parsed.data;
+    if (senderIdentityId) {
+      const identity = await prisma.senderIdentity.findFirst({
+        where: { id: senderIdentityId, userId },
+      });
+      if (!identity) {
+        return NextResponse.json({ error: "Sender identity not found" }, { status: 404 });
+      }
+    }
+    if (icpId) {
+      const icp = await prisma.icp.findFirst({
+        where: { id: icpId, product: { userId } },
+      });
+      if (!icp) return NextResponse.json({ error: "ICP not found" }, { status: 404 });
+    }
     const campaign = await prisma.campaign.update({ where: { id }, data: parsed.data });
     await prisma.auditLog.create({ data: { userId, action: "campaign.update", entity: "Campaign", entityId: id } });
     return NextResponse.json({ campaign });

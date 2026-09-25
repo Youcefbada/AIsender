@@ -38,6 +38,22 @@ export async function POST(req: Request) {
     });
     if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
+    const { senderIdentityId, icpId } = parsed.data;
+    if (senderIdentityId) {
+      const identity = await prisma.senderIdentity.findFirst({
+        where: { id: senderIdentityId, userId },
+      });
+      if (!identity) {
+        return NextResponse.json({ error: "Sender identity not found" }, { status: 404 });
+      }
+    }
+    if (icpId) {
+      const icp = await prisma.icp.findFirst({
+        where: { id: icpId, product: { userId } },
+      });
+      if (!icp) return NextResponse.json({ error: "ICP not found" }, { status: 404 });
+    }
+
     const campaign = await prisma.campaign.create({
       data: { ...parsed.data, userId },
     });

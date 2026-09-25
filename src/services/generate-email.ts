@@ -47,8 +47,12 @@ export async function generateEmail(args: GenerateArgs) {
       productUrl: campaign.product.url,
       affiliateUrl: campaign.product.affiliateUrl,
       productSummary: analysis?.summary,
-      outreachAngle: angles[(args.stepOrder ?? 0) % angles.length],
-      benefit: benefits[(args.stepOrder ?? 0) % benefits.length],
+      outreachAngle: angles.length
+        ? angles[(args.stepOrder ?? 0) % angles.length]
+        : "relevant to your work",
+      benefit: benefits.length
+        ? benefits[(args.stepOrder ?? 0) % benefits.length]
+        : "save time",
       senderName: campaign.senderIdentity?.fromName ?? "The team",
       language: detectLanguage(lead.geo, lead.domain),
       stepPurpose: args.stepPurpose,
@@ -61,7 +65,17 @@ export async function generateEmail(args: GenerateArgs) {
     }),
   });
 
-  const draft = parseJsonResponse<{ subject: string; bodyText: string; bodyHtml: string }>(content);
+  const draft = parseJsonResponse<{ subject: string; bodyText: string; bodyHtml: string }>(
+    content,
+    (d): d is { subject: string; bodyText: string; bodyHtml: string } => {
+      const o = d as Record<string, unknown>;
+      return (
+        typeof o?.subject === "string" &&
+        typeof o?.bodyText === "string" &&
+        typeof o?.bodyHtml === "string"
+      );
+    },
+  );
 
   const email = await prisma.emailMessage.create({
     data: {

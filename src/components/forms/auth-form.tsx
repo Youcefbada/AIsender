@@ -56,17 +56,18 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
-      <Input name="username" placeholder={t.auth.username} autoComplete="username" required />
+      <Input name="username" placeholder={t.auth.username} aria-label={t.auth.username} autoComplete="username" required />
       {mode === "register" && (
         <>
-          <Input name="email" type="email" placeholder={t.auth.emailOptional} autoComplete="email" />
-          <Input name="name" placeholder={t.auth.displayName} />
+          <Input name="email" type="email" placeholder={t.auth.emailOptional} aria-label={t.auth.emailOptional} autoComplete="email" />
+          <Input name="name" placeholder={t.auth.displayName} aria-label={t.auth.displayName} />
         </>
       )}
       <Input
         name="password"
         type="password"
         placeholder={t.auth.password}
+        aria-label={t.auth.password}
         autoComplete={mode === "login" ? "current-password" : "new-password"}
         minLength={8}
         required

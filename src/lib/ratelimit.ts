@@ -8,13 +8,13 @@ function dayKey(d = new Date()): string {
   return d.toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
 }
 
-export const QUOTAS = {
-  "emails:day": 100, // hard ceiling on drafts/day (sending is capped per-campaign)
-  "discovery:day": 500, // leads discovered per user/day
-  "ai:calls:day": 3000,
-} as const;
+export const QUOTAS: Record<string, number> = {
+  "emails:day": parseInt(process.env.DAILY_EMAIL_LIMIT || "20", 10), // Default 20 emails/day
+  "discovery:day": parseInt(process.env.DAILY_DISCOVERY_LIMIT || "30", 10), // Default 30 opportunities/day
+  "ai:calls:day": 1500,
+};
 
-export type QuotaScope = keyof typeof QUOTAS;
+export type QuotaScope = "emails:day" | "discovery:day" | "ai:calls:day";
 
 export async function consumeQuota(
   userId: string,
@@ -22,7 +22,7 @@ export async function consumeQuota(
   amount = 1,
 ): Promise<{ allowed: boolean; remaining: number }> {
   const windowKey = dayKey();
-  const limit = QUOTAS[scope];
+  const limit = QUOTAS[scope] ?? 100;
 
   const row = await prisma.usageCounter.upsert({
     where: { userId_scope_windowKey: { userId, scope, windowKey } },
@@ -30,15 +30,20 @@ export async function consumeQuota(
     update: {},
   });
 
-  if (row.count + amount > limit) {
-    return { allowed: false, remaining: Math.max(0, limit - row.count) };
-  }
+  const allowed = row.count + amount <= limit;
+  // Partial usage is always recorded: even when over limit, consume whatever
+  // room remains so the counter can never be bypassed by repeated over-limit
+  // calls. A single atomic UPDATE (rather than upsert + increment) closes the
+  // race between concurrent requests.
+  const delta = allowed ? amount : Math.max(0, limit - row.count);
+  const result = await prisma.$queryRaw<{ count: number }[]>`
+    UPDATE "UsageCounter"
+    SET "count" = "count" + LEAST(${delta}, GREATEST(0, ${limit} - "count"))
+    WHERE "id" = ${row.id}
+    RETURNING "count"`;
+  const newCount = result[0]?.count ?? row.count + delta;
 
-  const updated = await prisma.usageCounter.update({
-    where: { id: row.id },
-    data: { count: { increment: amount } },
-  });
-  return { allowed: true, remaining: limit - updated.count };
+  return { allowed, remaining: Math.max(0, limit - newCount) };
 }
 
 export async function peekQuota(
@@ -48,5 +53,23 @@ export async function peekQuota(
   const row = await prisma.usageCounter.findUnique({
     where: { userId_scope_windowKey: { userId, scope, windowKey: dayKey() } },
   });
-  return { used: row?.count ?? 0, limit: QUOTAS[scope] };
+  return { used: row?.count ?? 0, limit: QUOTAS[scope] ?? 100 };
+}
+
+export async function getUsageSummary(userId: string) {
+  const [discovery, emails] = await Promise.all([
+    peekQuota(userId, "discovery:day"),
+    peekQuota(userId, "emails:day"),
+  ]);
+
+  return {
+    discovery: {
+      used: discovery.used,
+      limit: discovery.limit,
+    },
+    emails: {
+      used: emails.used,
+      limit: emails.limit,
+    },
+  };
 }

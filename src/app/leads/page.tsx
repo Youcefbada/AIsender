@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requirePageUser } from "@/lib/page-auth";
 import { AppShell } from "@/components/app-shell";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CsvImport } from "@/components/forms/csv-import";
 import { ActionButton } from "@/components/forms/action-button";

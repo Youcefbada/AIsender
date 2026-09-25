@@ -35,11 +35,12 @@ export function CsvImport({ campaignId }: { campaignId?: string }) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-[var(--muted-foreground)]">{t.csv.headers}</p>
-      <input type="file" accept=".csv,text/csv" onChange={onFile} className="text-sm" />
+      <input type="file" accept=".csv,text/csv" onChange={onFile} className="text-sm" aria-label={t.csv.file} />
       <Textarea
         value={csv}
         onChange={(e) => setCsv(e.target.value)}
         placeholder={t.csv.paste}
+        aria-label={t.csv.paste}
         className="min-h-[140px] font-mono text-xs"
       />
       {result && <p className="text-sm">{result}</p>}

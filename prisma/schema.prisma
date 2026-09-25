@@ -8,10 +8,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Hardcoded Supabase Session-pooler URL (IPv4) so no env setup is needed.
-  // Password special chars are URL-encoded: / → %2F, % → %25, & → %26,
-  // , → %2C, # → %23. Keep this repo PRIVATE.
-  url      = "postgresql://postgres.pkahtfqlcedraumcytiv:n%2F4q%25B%26pqBw%2Cf%23r@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require&connection_limit=3&pool_timeout=20"
+  url      = env("DATABASE_URL")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,6 +39,11 @@ model User {
   apiKeys      ApiKey[]
   auditLogs    AuditLog[]
   usage        UsageCounter[]
+
+  productProfiles ProductProfile[]
+  opportunities   Opportunity[]
+  searchRuns      SearchRun[]
+  capability      UserCapability?
 
   @@index([email])
   @@index([username])
@@ -111,6 +113,8 @@ enum KeyProvider {
   RESEND
   SERPER
   SMTP
+  REDDIT
+  HUNTER
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -133,6 +137,7 @@ model Product {
   analysis  ProductAnalysis?
   icps      Icp[]
   campaigns Campaign[]
+  productProfiles ProductProfile[]
 
   @@index([userId])
 }
@@ -283,6 +288,7 @@ model Lead {
   score     LeadScore?
   research  ProspectResearch?
   emails    EmailMessage[]
+  opportunities Opportunity[]
 
   // dedup: a user shouldn't hold the same domain twice
   @@unique([userId, domain])
@@ -569,3 +575,207 @@ enum AgentRunStatus {
   PARTIAL
   FAILED
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEMAND DISCOVERY & OPPORTUNITY INTELLIGENCE
+// ─────────────────────────────────────────────────────────────────────────────
+
+model UserCapability {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  skills           Json     // string[] e.g. ["Next.js", "Python", "AI", "Shopify"]
+  services         Json     // string[] e.g. ["Custom SaaS", "AI Automation", "AI Agents"]
+  portfolioLinks   Json?    // { title: string, url: string }[]
+  hourlyRateMin    Int?
+  hourlyRateMax    Int?
+  bio              String?  @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ProductProfile {
+  id                     String               @id @default(cuid())
+  userId                 String
+  productId              String?
+  name                   String
+  description            String               @db.Text
+  offer                  String?              @db.Text
+  category               String?
+  subcategories          Json?                // string[]
+  problemsSolved         Json?                // string[]
+  painPoints             Json?                // string[]
+  useCases               Json?                // string[]
+  targetIndustries       Json?                // string[]
+  targetCompanyTypes     Json?                // string[]
+  targetCompanySizes     Json?                // string[]
+  targetGeographies      Json?                // string[]
+  buyerPersonas          Json?                // string[]
+  decisionMakerRoles     Json?                // string[]
+  strongDemandSignals    Json?                // string[]
+  mediumDemandSignals    Json?                // string[]
+  weakDemandSignals      Json?                // string[]
+  negativeSignals        Json?                // string[]
+  technologies           Json?                // string[]
+  platforms              Json?                // string[]
+  competitors            Json?                // string[]
+  keywords               Json?                // string[]
+  semanticConcepts       Json?                // string[]
+  generatedSearchQueries Json?                // { reddit?: string[], web?: string[], x?: string[], forums?: string[] }
+  recommendedCommunities Json?                // string[] e.g. ["r/Entrepreneur", "r/shopify"]
+  status                 ProductProfileStatus @default(DRAFT)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product       Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  opportunities Opportunity[]
+  searchRuns    SearchRun[]
+
+  @@index([userId])
+}
+
+enum ProductProfileStatus {
+  DRAFT
+  ANALYZING
+  ACTIVE
+  ARCHIVED
+}
+
+
+model Opportunity {
+  id                   String              @id @default(cuid())
+  userId               String
+  productProfileId     String
+  source               String              // "reddit" | "serper" | "x" | "web" | "forum"
+  sourceUrl            String
+  sourceExternalId     String?
+  platform             OpportunityPlatform @default(WEB)
+
+  authorName           String?
+  authorUsername       String?
+  authorProfileUrl     String?
+
+  companyName          String?
+  companyDomain        String?
+  companyUrl           String?
+  location             String?
+
+  publishedAt          DateTime?
+  discoveredAt         DateTime            @default(now())
+
+  originalText         String              @db.Text
+  extractedText        String?             @db.Text
+  detectedNeed         String?             @db.Text
+  detectedProblem      String?             @db.Text
+  currentWorkflow      String?             @db.Text
+  requestedSolution    String?             @db.Text
+
+  opportunityType      OpportunityType     @default(CUSTOM_SOFTWARE)
+  intentLevel          IntentLevel         @default(MEDIUM)
+
+  intentScore          Int                 @default(0) // 0-30
+  commercialScore      Int                 @default(0) // 0-25
+  capabilityMatchScore Int                 @default(0) // 0-25
+  recencyScore         Int                 @default(0) // 0-10
+  confidenceScore      Int                 @default(0) // 0-10
+  overallScore         Int                 @default(0) // 0-100
+
+  evidence             Json?               // string[] quotes from originalText
+  whyThisIsAnOpportunity String?           @db.Text
+  recommendedOffer     String?             @db.Text
+  recommendedApproach  String?             @db.Text
+  suggestedMessage     String?             @db.Text
+
+  status               OpportunityStatus   @default(NEW)
+
+  email                String?
+  emailConfidence      EmailConfidence     @default(NONE)
+  contactUrl           String?
+  contactedAt          DateTime?
+
+  leadId               String?
+
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productProfile ProductProfile @relation(fields: [productProfileId], references: [id], onDelete: Cascade)
+  lead           Lead?          @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, sourceUrl])
+  @@index([userId])
+  @@index([productProfileId])
+  @@index([status])
+  @@index([overallScore])
+  @@index([opportunityType])
+}
+
+enum OpportunityPlatform {
+  REDDIT
+  X
+  WEB
+  FORUM
+}
+
+enum OpportunityType {
+  PAID_PROJECT
+  CUSTOM_SOFTWARE
+  SAAS_MVP
+  AI_PROJECT
+  AI_AUTOMATION
+  INTERNAL_TOOL
+  WEBSITE_PROJECT
+  MOBILE_APP
+  EXISTING_SOFTWARE_DEVELOPMENT
+  BUG_FIX
+  TECHNICAL_COFOUNDER
+  EQUITY_PROJECT
+  IDEA_ONLY
+  JOB
+  NOT_RELEVANT
+}
+
+enum IntentLevel {
+  EXPLICIT
+  HIGH
+  MEDIUM
+  LOW
+  NONE
+}
+
+enum OpportunityStatus {
+  NEW
+  SAVED
+  CONTACTED
+  IGNORED
+  CONVERTED
+}
+
+enum EmailConfidence {
+  NONE
+  GUESSED
+  ROLE_BASED
+  VERIFIED
+}
+
+model SearchRun {
+  id               String          @id @default(cuid())
+  userId           String
+  productProfileId String?
+  provider         String          // "reddit" | "serper" | "x"
+  query            String
+  resultsFound     Int             @default(0)
+  resultsAccepted  Int             @default(0)
+  estimatedCost    Float           @default(0)
+  quotaConsumed    Int             @default(0)
+  createdAt        DateTime        @default(now())
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productProfile ProductProfile? @relation(fields: [productProfileId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([productProfileId])
+}
+

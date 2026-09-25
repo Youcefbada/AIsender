@@ -7,6 +7,7 @@ export async function Nav() {
   const { t } = await getI18n();
   const links: [string, string][] = [
     ["/dashboard", t.nav.dashboard],
+    ["/opportunities", t.nav.opportunities],
     ["/products", t.nav.products],
     ["/campaigns", t.nav.campaigns],
     ["/leads", t.nav.leads],

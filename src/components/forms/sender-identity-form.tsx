@@ -36,9 +36,9 @@ export function SenderIdentityForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
-      <Input name="fromName" placeholder={t.senderForm.fromName} required />
-      <Input name="fromEmail" type="email" placeholder={t.senderForm.fromEmail} required />
-      <Input name="replyTo" type="email" placeholder={t.senderForm.replyTo} />
+      <Input name="fromName" placeholder={t.senderForm.fromName} aria-label={t.senderForm.fromName} required />
+      <Input name="fromEmail" type="email" placeholder={t.senderForm.fromEmail} aria-label={t.senderForm.fromEmail} required />
+      <Input name="replyTo" type="email" placeholder={t.senderForm.replyTo} aria-label={t.senderForm.replyTo} />
       <label className="block text-sm">{t.senderForm.channel}
         <select name="channel" className="mt-1 h-9 w-full rounded-md border bg-transparent px-2 text-sm" style={{ borderColor: "var(--border)" }}>
           <option value="RESEND">Resend</option>

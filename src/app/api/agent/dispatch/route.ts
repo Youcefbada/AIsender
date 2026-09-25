@@ -11,6 +11,11 @@ export async function POST(req: Request) {
   if (auth !== `Bearer ${config.cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const result = await dispatchDueEmails();
-  return NextResponse.json({ ok: true, ...result });
+  try {
+    const result = await dispatchDueEmails();
+    return NextResponse.json({ ok: true, ...result });
+  } catch (err) {
+    console.error("agent dispatch error", err);
+    return NextResponse.json({ error: "Dispatch failed" }, { status: 500 });
+  }
 }

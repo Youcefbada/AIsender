@@ -32,7 +32,7 @@ export default async function ProductDetail({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">{product.name}</h1>
-          <a href={product.url} className="text-xs text-[var(--muted-foreground)]" target="_blank">{product.url}</a>
+          <a href={product.url} className="text-xs text-[var(--muted-foreground)]" target="_blank" rel="noopener noreferrer">{product.url}</a>
         </div>
         <div className="flex items-center gap-2">
           <ActionButton

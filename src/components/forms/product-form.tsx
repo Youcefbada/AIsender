@@ -41,11 +41,11 @@ export function ProductForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
-      <Input name="name" placeholder={t.products.name} required />
-      <Input name="url" type="url" placeholder={t.products.url} required />
-      <Input name="affiliateUrl" type="url" placeholder={t.products.affiliate} />
-      <Textarea name="description" placeholder={t.products.description} required />
-      <Textarea name="notes" placeholder={t.products.notes} />
+      <Input name="name" placeholder={t.products.name} aria-label={t.products.name} required />
+      <Input name="url" type="url" placeholder={t.products.url} aria-label={t.products.url} required />
+      <Input name="affiliateUrl" type="url" placeholder={t.products.affiliate} aria-label={t.products.affiliate} />
+      <Textarea name="description" placeholder={t.products.description} aria-label={t.products.description} required />
+      <Textarea name="notes" placeholder={t.products.notes} aria-label={t.products.notes} />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" disabled={loading}>
         {loading ? t.products.creating : t.products.create}

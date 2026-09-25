@@ -8,24 +8,33 @@
 // Everything else (Gemini/Groq/OpenRouter/Resend/Serper keys, sender email) is
 // entered per-user in Settings → API keys, not here.
 
+function requiredSecret(name: string, devFallback: string): string {
+  const value = process.env[name];
+  if (value) return value;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return devFallback;
+}
+
 export const config = {
   // JWT signing secret for NextAuth.
-  authSecret: process.env.AUTH_SECRET || "2wYyF8tIuIXAueopMSQBbdL0geFcS2LFmJTY1lAoi8o=",
+  authSecret: requiredSecret("AUTH_SECRET", "dev-auth-secret-change-in-production"),
 
   // AES-256-GCM key (base64, 32 bytes) for encrypting stored API keys.
-  encryptionKey: process.env.ENCRYPTION_KEY || "2lekR7mcXnoYv/7pfN7R+p3KWtrEnxQUdAn+h83Qt+g=",
+  encryptionKey: requiredSecret("ENCRYPTION_KEY", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="),
 
   // HMAC secret for signing tracking / unsubscribe links.
-  trackingSecret: process.env.TRACKING_SECRET || "el6IXMWOX9YDka6GA3ATDayAdT7ANgi6",
+  trackingSecret: process.env.TRACKING_SECRET || "dev-tracking-secret-change-in-production",
 
   // Bearer token the cron scheduler must present to /api/agent/*.
-  cronSecret: process.env.CRON_SECRET || "1ezlN3rKEZyjHPipG0OyQj1xC35+aHOi",
+  cronSecret: requiredSecret("CRON_SECRET", "dev-cron-secret-change-in-production"),
 
   // Public base URL used for tracking/unsubscribe links in emails and auth redirects.
-  appUrl: process.env.APP_URL || "https://fakherb.store",
+  appUrl: process.env.APP_URL || "http://localhost:3000",
 
   // Default sender (also configurable per user via Settings → Sender identity).
-  emailFrom: process.env.EMAIL_FROM || "affiliate@luminax.pro",
-  emailFromName: process.env.EMAIL_FROM_NAME || "Affiliate",
+  emailFrom: process.env.EMAIL_FROM || "notifications@example.com",
+  emailFromName: process.env.EMAIL_FROM_NAME || "Demand Scout",
   emailMailingAddress: process.env.EMAIL_MAILING_ADDRESS || "",
 };

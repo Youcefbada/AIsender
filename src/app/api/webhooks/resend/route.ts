@@ -6,9 +6,11 @@ import type { Prisma } from "@prisma/client";
 // Maps provider events onto EmailMessage state and feeds the suppression list on
 // bounces & complaints (critical for deliverability + compliance).
 //
-// NOTE: Resend signs webhooks with Svix. For production, verify the
-// svix-signature header against RESEND_WEBHOOK_SECRET before trusting the body.
-// Left as a clearly-marked TODO to avoid adding the svix dependency here.
+// NOTE: Resend signs webhooks with Svix. Without the svix dependency we fall
+// back to a shared-secret check: the caller must present the secret via the
+// x-webhook-secret or authorization header. In production the request is
+// rejected (401) if RESEND_WEBHOOK_SECRET is not configured, so we never
+// silently accept unsigned webhooks.
 
 interface ResendEvent {
   type: string;
@@ -16,6 +18,18 @@ interface ResendEvent {
 }
 
 export async function POST(req: Request) {
+  const secret = process.env.RESEND_WEBHOOK_SECRET;
+  if (secret) {
+    const presented =
+      req.headers.get("x-webhook-secret") ||
+      req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    if (!presented || presented !== secret) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  } else if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 401 });
+  }
+
   let event: ResendEvent;
   try {
     event = (await req.json()) as ResendEvent;

@@ -20,7 +20,7 @@ async function main() {
 
   console.log("✅ Admin account ready:");
   console.log(`   username: ${user.username}`);
-  console.log(`   password: ${password}`);
+  console.log("   password: (set via ADMIN_PASSWORD, not printed)");
   console.log("   ⚠  Change this password after first login.");
 }
 

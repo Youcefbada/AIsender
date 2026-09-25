@@ -7,6 +7,7 @@ export const dictionaries = {
   en: {
     nav: {
       dashboard: "Dashboard",
+      opportunities: "Opportunities",
       products: "Products",
       campaigns: "Campaigns",
       leads: "Leads",
@@ -149,6 +150,7 @@ export const dictionaries = {
       noContact: "no contact",
     },
     csv: {
+      file: "Select CSV file",
       headers: "CSV headers: company, website, email, name, position, industry, companysize, geo. Only company is required.",
       paste: "…or paste CSV here",
       import: "Import leads",
@@ -205,6 +207,7 @@ export const dictionaries = {
   ar: {
     nav: {
       dashboard: "لوحة التحكم",
+      opportunities: "الفرص والطلب",
       products: "المنتجات",
       campaigns: "الحملات",
       leads: "العملاء المحتملون",
@@ -347,6 +350,7 @@ export const dictionaries = {
       noContact: "لا جهة اتصال",
     },
     csv: {
+      file: "اختر ملف CSV",
       headers: "أعمدة CSV: company, website, email, name, position, industry, companysize, geo. المطلوب فقط company.",
       paste: "…أو الصق CSV هنا",
       import: "استيراد العملاء",

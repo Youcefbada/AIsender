@@ -49,6 +49,7 @@ export const serperProvider: DiscoveryProvider = {
           method: "POST",
           headers: { "X-API-KEY": key, "Content-Type": "application/json" },
           body: JSON.stringify({ q: term, num: 10 }),
+          signal: AbortSignal.timeout(15000),
         });
         if (!res.ok) continue;
         const data = (await res.json()) as { organic?: SerperOrganic[] };
@@ -73,3 +74,96 @@ export const serperProvider: DiscoveryProvider = {
     return leads;
   },
 };
+
+import type {
+  OpportunityDiscoveryProvider,
+  OpportunityQuery,
+  DiscoveredRawItem,
+} from "./opportunity-provider";
+import type { OpportunityPlatform } from "@prisma/client";
+
+export const serperOpportunityProvider: OpportunityDiscoveryProvider = {
+  name: "serper",
+  async search(query: OpportunityQuery): Promise<DiscoveredRawItem[]> {
+    const key = query.apiKey || process.env.SERPER_API_KEY;
+    if (!key) return [];
+
+    const seenUrls = new Set<string>();
+    const results: DiscoveredRawItem[] = [];
+
+    for (const q of query.queries) {
+      if (results.length >= query.limit) break;
+
+      try {
+        const res = await fetch("https://google.serper.dev/search", {
+          method: "POST",
+          headers: {
+            "X-API-KEY": key,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            q,
+            num: 10,
+          }),
+          signal: AbortSignal.timeout(15000),
+        });
+
+        if (!res.ok) continue;
+        const data = (await res.json()) as {
+          organic?: (SerperOrganic & { date?: string })[];
+        };
+
+        for (const item of data.organic ?? []) {
+          if (!item.link || seenUrls.has(item.link)) continue;
+          seenUrls.add(item.link);
+
+          let platform: OpportunityPlatform = "WEB";
+          let authorUsername: string | undefined;
+
+          if (/https?:\/\/(www\.)?(x\.com|twitter\.com)/i.test(item.link)) {
+            platform = "X";
+            const match = item.link.match(/(?:x|twitter)\.com\/([a-zA-Z0-9_]+)/i);
+            if (match && match[1] && match[1] !== "search" && match[1] !== "home") {
+              authorUsername = match[1];
+            }
+          } else if (/https?:\/\/(www\.)?reddit\.com/i.test(item.link)) {
+            platform = "REDDIT";
+          } else if (
+            /(community|forum|discuss|groups|threads)\./i.test(item.link) ||
+            /stackexchange|stackoverflow|quora/i.test(item.link)
+          ) {
+            platform = "FORUM";
+          }
+
+          const domain = normalizeDomain(item.link);
+          const snippet = (item.snippet || "").trim();
+          const content = snippet.length > 0 ? snippet : item.title;
+
+          results.push({
+            platform,
+            source: platform === "X" ? "x" : platform === "REDDIT" ? "reddit" : "serper",
+            sourceUrl: item.link,
+            title: item.title,
+            content,
+            authorName: authorUsername,
+            authorUsername,
+            authorProfileUrl: authorUsername ? `https://x.com/${authorUsername}` : undefined,
+            companyDomain: domain || undefined,
+            companyName: item.title.split(/[|\-–—]/)[0].trim().slice(0, 80),
+            publishedAt: item.date ? new Date(item.date) : undefined,
+          });
+
+          if (results.length >= query.limit) break;
+        }
+      } catch (err) {
+        console.warn("Serper opportunity query warning:", err);
+      }
+
+      // Small delay between search requests
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
+    return results;
+  },
+};
+

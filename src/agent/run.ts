@@ -46,8 +46,8 @@ export async function runAllActiveCampaigns(
 // Allow direct execution: `tsx src/agent/run.ts`
 if (process.argv[1] && process.argv[1].endsWith("run.ts")) {
   runAllActiveCampaigns("cron")
-    .then((r) => {
-      console.log(JSON.stringify(r, null, 2));
+    .then(() => {
+      console.log("Campaign pipeline run complete.");
       return prisma.$disconnect();
     })
     .catch((e) => {
