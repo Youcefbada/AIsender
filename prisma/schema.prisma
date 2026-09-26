@@ -7,8 +7,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "mysql"
+  url      = "mysql://u700271251_GpznI:Youcefbada2004@@127.0.0.1:3306/u700271251_KO5gv"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -35,13 +35,24 @@ export async function consumeQuota(
   // room remains so the counter can never be bypassed by repeated over-limit
   // calls. A single atomic UPDATE (rather than upsert + increment) closes the
   // race between concurrent requests.
-  const delta = allowed ? amount : Math.max(0, limit - row.count);
-  const result = await prisma.$queryRaw<{ count: number }[]>`
-    UPDATE "UsageCounter"
-    SET "count" = "count" + LEAST(${delta}, GREATEST(0, ${limit} - "count"))
-    WHERE "id" = ${row.id}
-    RETURNING "count"`;
-  const newCount = result[0]?.count ?? row.count + delta;
+  const { newCount } = await prisma.$transaction(async (tx) => {
+    const current = await tx.usageCounter.findUnique({
+      where: { id: row.id }
+    });
+    const currentCount = current?.count ?? 0;
+    const actualDelta = (currentCount + amount <= limit) ? amount : Math.max(0, limit - currentCount);
+    
+    if (actualDelta === 0) {
+      return { newCount: currentCount };
+    }
+
+    const updated = await tx.usageCounter.update({
+      where: { id: row.id },
+      data: { count: { increment: actualDelta } }
+    });
+    
+    return { newCount: updated.count };
+  });
 
   return { allowed, remaining: Math.max(0, limit - newCount) };
 }
