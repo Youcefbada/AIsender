@@ -11,6 +11,9 @@ import { config } from "./config";
 // JWT session strategy, so we use JWT and rehydrate user.id via callbacks.
 // Google OAuth stays optional (registered only when env vars exist).
 
+process.env.NEXTAUTH_URL = config.appUrl;
+process.env.AUTH_URL = config.appUrl;
+
 const providers: NextAuthConfig["providers"] = [
   Credentials({
     name: "Username & password",

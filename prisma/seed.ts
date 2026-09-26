@@ -8,8 +8,8 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  const username = (process.env.ADMIN_USERNAME || "admin").toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || "Admin!2026";
+  const username = "admin";
+  const password = "Admin!2026";
   const passwordHash = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.upsert({
